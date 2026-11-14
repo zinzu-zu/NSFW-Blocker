@@ -15,17 +15,18 @@ A browser extension for Firefox (Mac and Android) and Edge that keeps adult cont
 
 - Explicit posts that weren't tagged NSFW, in subreddits that aren't marked adult-only.
 - The Reddit app, and Chrome on Android, where extensions don't run. Reddit's own setting covers those, as described below.
-- Safari, and browsers the profile doesn't know about, like Opera, Vivaldi or Arc. Screen Time covers Safari, as described below.
+- Browsers the profile doesn't know about, like Opera, Vivaldi or Arc. (Safari is covered: Reddit is blocked there completely, see below.)
 - If Reddit refuses to answer (rate limit, private or banned subreddit), the extension falls back to the subreddit's name (`nsfw`, `gonewild`, `porn`, `hentai` and similar) and checks again an hour later.
 
 ## Mac: how it's locked in
 
-The lock is one macOS configuration profile, installed at the system level, so only an administrator can remove it. It does four things, and doesn't touch any DNS settings:
+The lock is one macOS configuration profile, installed at the system level, so only an administrator can remove it. It does five things, and doesn't touch any DNS settings:
 
 1. **Firefox force-installs the extension.** Firefox installs it by itself, the Remove and Disable buttons go away, and it applies to every profile. Policies are keyed by app, so a second copy of Firefox in your Downloads folder gets them too.
 2. **Chrome, Brave and Chromium block Reddit completely.** On a Mac without device management, those browsers only force-install extensions from the Chrome Web Store, which charges $5. Blocking Reddit in them is free and leaves no way around the filter, since Reddit then only opens in Firefox. Edge works the same way, unless you publish the extension to Microsoft's free Edge Add-ons store. In that case Edge force-installs it like Firefox does.
-3. **Every window is covered.** Private windows, Guest mode, new profiles and Brave's Tor windows are turned off. In Firefox, Troubleshoot Mode, `about:profiles` and `about:config` are blocked as well, because each of those can start Firefox without the extension.
-4. **Your everyday account becomes a Standard account, and a friend holds the admin password.** Removing the profile needs that password, so this is what makes it stick.
+3. **Safari blocks Reddit completely.** Safari can't be made to keep an extension switched on, so it gets the same treatment as Chrome: Reddit (and Instagram, if you chose that) won't open there. It uses Apple's own web filter, the one behind Screen Time, which also blocks adult sites it recognises and the adult media hosts in `extension/rules.json`. That filter turns off Safari's private windows, and it isn't on a passcode you could reset with your Apple Account: removing it needs the admin password.
+4. **Firefox keeps private windows; nothing else does.** The extension runs inside Firefox's private windows too, so they're filtered the same way. In Chrome, Brave, Chromium and Edge, private windows, Guest mode, new profiles and Brave's Tor windows are turned off. In Firefox, Troubleshoot Mode, `about:profiles` and `about:config` are blocked, because each of those can start Firefox without the extension.
+5. **Your everyday account becomes a Standard account, and a friend holds the admin password.** Removing the profile needs that password, so this is what makes it stick.
 
 ## Mac setup
 
@@ -47,11 +48,10 @@ The lock is one macOS configuration profile, installed at the system level, so o
 **4. Check it worked.** Quit and reopen your browsers.
 - In Firefox, `about:policies` should list the policies, and on `about:addons` the blocker should have no Remove option.
 - In Chrome, `chrome://policy` should list them, and reddit.com should show Chrome's "blocked by your organization" page.
-- In Firefox, `reddit.com/r/gonewild` should show the blocked page.
+- In Firefox, `reddit.com/r/gonewild` should show the blocked page, in a normal window and in a private window (File > New Private Window).
+- In Safari, reddit.com should show "You cannot browse this page", and File should have no New Private Window.
 
-**5. Cover Safari with Screen Time.** In **System Settings > Screen Time > Content & Privacy**, set **Limit Adult Websites**. Add `reddit.com` to the never-allowed list if you don't want Reddit in Safari at all. Then let your friend set the Screen Time passcode.
-
-**6. Hand over admin.** In System Settings > Users & Groups, create an admin account for your friend to set a password on. Then turn off **Allow this user to administer this computer** for your own account.
+**5. Hand over admin.** In System Settings > Users & Groups, create an admin account for your friend to set a password on. Then turn off **Allow this user to administer this computer** for your own account.
 
 ## Android
 
@@ -69,6 +69,17 @@ Android doesn't let an adult's phone be locked by someone else without device-ma
 
 - **Hosts file blocklist.** It's admin-only to edit, but it adds little over the DNS filter you already have.
 - **A local filtering proxy with HTTPS inspection.** It could filter Reddit in every app, but it needs a root certificate installed. It breaks apps that pin their certificates, including the Reddit app, and it weakens the device's security.
+
+## Adding Safari to a Mac that's already locked
+
+If you installed the lock before Safari was part of it, you install the profile again. The new one replaces the old one (same name), so your friend types the admin password once.
+
+1. Back up the current folder first: `cp -R ~/Documents/Scripts/reddit-nsfw-blocker ~/Documents/Scripts/previous-builds/reddit-nsfw-blocker-$(date +%Y-%m-%d-%H%M)` (make the `previous-builds` folder first if it doesn't exist).
+2. Replace `lockdown/lockdown.sh` and `README.md` in `~/Documents/Scripts/reddit-nsfw-blocker` with the new ones.
+3. Your friend runs `sudo bash lockdown.sh` in the `lockdown` folder and gives the same answers as last time (the add-on slug, or Enter for the `.xpi`).
+4. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
+5. Quit Safari and Firefox with Cmd+Q, open them again, and do the checks in step 4 of the setup.
+6. If you'd set Limit Adult Websites in Screen Time before, you can leave it; the profile does the same job and can't be reset with your Apple Account.
 
 ## Updating a locked Mac
 

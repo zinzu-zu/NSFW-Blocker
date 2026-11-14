@@ -2,9 +2,10 @@
 # Reddit NSFW Blocker lock-down for macOS.
 # Run from Terminal:  sudo bash lockdown.sh
 # Builds one configuration profile that force-installs the extension in
-# Firefox (and Edge, if published there), blocks Reddit in the other Chromium
-# browsers, and turns off private windows and extra profiles. DNS settings
-# are left alone.
+# Firefox (and Edge, if published there), blocks Reddit in Safari and the
+# other Chromium browsers, and turns off extra profiles. Firefox keeps its
+# private windows, with the extension running in them; the other browsers
+# lose theirs. DNS settings are left alone.
 # A system profile can only be removed with an administrator password.
 set -euo pipefail
 
@@ -39,7 +40,7 @@ fi
 # Web Store on a Mac that isn't MDM-managed, so they get Reddit blocked outright
 # instead. Edge can force-install from Microsoft's free Edge Add-ons store.
 read -r -p "Edge Add-ons extension ID (Enter to skip and block Reddit in Edge too): " EDGE_ID
-read -r -p "Also block Instagram in the Chromium browsers (Chrome, Brave, and Edge unless it has the extension), so its feed can only be opened in Firefox? [Y/n]: " IG
+read -r -p "Also block Instagram in Safari and the Chromium browsers (Chrome, Brave, and Edge unless it has the extension), so its feed can only be opened in Firefox? [Y/n]: " IG
 IG_ENTRY="<string>instagram.com</string>"
 [[ "$IG" =~ ^[Nn] ]] && IG_ENTRY=""
 BLOCK_REDDIT="<key>URLBlocklist</key><array><string>reddit.com</string><string>redd.it</string><string>redditmedia.com</string>$IG_ENTRY</array>"
@@ -53,6 +54,33 @@ else
 fi
 
 u() { uuidgen; }
+
+# --- Safari ---
+# Safari can't run the extension under lock, so Reddit is blocked there
+# outright, like in Chrome. Apple's content filter (the one Screen Time uses)
+# also blocks adult sites it recognises and turns off Safari's private
+# windows; Firefox's private windows stay. The adult media hosts come from the
+# extension's rules.json, so the two lists can't drift apart.
+# The old key names (filterBlacklist, whitelistEnabled) are used on purpose:
+# Apple renamed them in macOS 15.2, but the old ones still work on every
+# version and the new ones are reported to block less reliably.
+SAFARI_DOMAINS="reddit.com redd.it redditmedia.com"
+[[ -n "$IG_ENTRY" ]] && SAFARI_DOMAINS="$SAFARI_DOMAINS instagram.com"
+RULES="$ROOT/extension/rules.json"
+if [[ -f "$RULES" ]]; then
+  SAFARI_DOMAINS="$SAFARI_DOMAINS $(sed -n '/"requestDomains"/,/]/p' "$RULES" | grep -oE '"[a-z0-9.-]+\.[a-z0-9-]+"' | tr -d '"' | sort -u | tr '\n' ' ')"
+fi
+safari_urls() {
+  local d sub
+  for d in $SAFARI_DOMAINS; do
+    for sub in "" "www."; do
+      printf '<string>https://%s%s</string><string>http://%s%s</string>' "$sub" "$d" "$sub" "$d"
+    done
+  done
+  for sub in old new np i sh; do
+    printf '<string>https://%s.reddit.com</string>' "$sub"
+  done
+}
 
 chromium_payload() { # domain, private-key, add-profile-key, extra
   cat <<P
@@ -98,10 +126,19 @@ cat > "$OUT" <<EOF2
           <key>private_browsing</key><true/>
         </dict>
       </dict>
-      <key>DisablePrivateBrowsing</key><true/>
       <key>DisableSafeMode</key><true/>
       <key>BlockAboutProfiles</key><true/>
       <key>BlockAboutConfig</key><true/>
+    </dict>
+    <dict>
+      <key>PayloadType</key><string>com.apple.familycontrols.contentfilter</string>
+      <key>PayloadIdentifier</key><string>local.redditnsfwblocker.safari</string>
+      <key>PayloadUUID</key><string>$(u)</string>
+      <key>PayloadVersion</key><integer>1</integer>
+      <key>restrictWeb</key><true/>
+      <key>useContentFilter</key><true/>
+      <key>whitelistEnabled</key><false/>
+      <key>filterBlacklist</key><array>$(safari_urls)</array>
     </dict>
 $(chromium_payload com.google.Chrome IncognitoModeAvailability BrowserAddPersonEnabled "$BLOCK_REDDIT")
 $(chromium_payload org.chromium.Chromium IncognitoModeAvailability BrowserAddPersonEnabled "$BLOCK_REDDIT")
