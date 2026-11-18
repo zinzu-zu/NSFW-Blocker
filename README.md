@@ -74,8 +74,8 @@ Android doesn't let an adult's phone be locked by someone else without device-ma
 
 If you installed the lock before Safari was part of it, you install the profile again. The new one replaces the old one (same name), so your friend types the admin password once.
 
-1. Back up the current folder first: `cp -R ~/Documents/Scripts/reddit-nsfw-blocker ~/Documents/Scripts/previous-builds/reddit-nsfw-blocker-$(date +%Y-%m-%d-%H%M)` (make the `previous-builds` folder first if it doesn't exist).
-2. Replace `lockdown/lockdown.sh` and `README.md` in `~/Documents/Scripts/reddit-nsfw-blocker` with the new ones.
+1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/reddit-nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
+2. Replace `lockdown/lockdown.sh` and `README.md` in the blocker's folder with the new ones.
 3. Your friend runs `sudo bash lockdown.sh` in the `lockdown` folder and gives the same answers as last time (the add-on slug, or Enter for the `.xpi`).
 4. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
 5. Quit Safari and Firefox with Cmd+Q, open them again, and do the checks in step 4 of the setup.
