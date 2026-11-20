@@ -42,6 +42,10 @@ elif [ ! -x "$ROOT/bin/tle" ]; then
 fi
 
 install -o root -g wheel -m 755 "$HERE/owndroid-key" "$ROOT/owndroid-key"
+# A downloaded zip marks every file as quarantined, the copies keep the mark,
+# and launchd refuses to load a quarantined plist ("Bootstrap failed: 5").
+unquarantine() { command -v xattr >/dev/null 2>&1 && xattr -d com.apple.quarantine "$@" 2>/dev/null; true; }
+unquarantine "$ROOT/owndroid-key" "$ROOT/bin/tle"
 tmutil addexclusion "$ROOT/sealed" 2>/dev/null || true
 mkdir -p "$DEST/Library/Logs" "$DEST/Library/LaunchDaemons"
 touch "$DEST/Library/Logs/owndroid-key.log"
@@ -52,6 +56,7 @@ chmod 644 "$DEST/Library/Logs/owndroid-key.log"
 # loading retries once.
 for label in "$LABEL" "$LABEL.service"; do
   install -o root -g wheel -m 644 "$HERE/$label.plist" "$DEST/Library/LaunchDaemons/$label.plist"
+  unquarantine "$DEST/Library/LaunchDaemons/$label.plist"
   launchctl bootout "system/$label" 2>/dev/null || true
   launchctl bootstrap system "$DEST/Library/LaunchDaemons/$label.plist" 2>/dev/null \
     || { sleep 2; launchctl bootstrap system "$DEST/Library/LaunchDaemons/$label.plist"; }
