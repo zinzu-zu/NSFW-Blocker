@@ -108,10 +108,14 @@ public final class MainActivity extends Activity {
 
         long armedAt = p.getLong(Guard.K_ARMED_AT, 0);
         long markerAt = p.getLong(Guard.K_MARKER_SEEN_AT, 0);
-        row(armedAt > 0, "Add-on check",
+        long panelArmedAt = p.getLong(Guard.K_PANEL_ARMED_AT, 0);
+        long panelAt = p.getLong(Guard.K_PANEL_SEEN_AT, 0);
+        row(armedAt > 0 || panelArmedAt > 0, "Add-on check",
                 armedAt > 0
                         ? "Active since " + when(armedAt) + ". Last saw the add-on running " + ago(markerAt) + "."
-                        : "Waiting. Open instagram.com in Firefox with add-on version 1.2.0 or newer. Feed Guard starts guarding the first time it sees the add-on.",
+                        : panelArmedAt > 0
+                        ? "Feeds only, for add-on 1.1: active since " + when(panelArmedAt) + ". Last saw its feed panel " + ago(panelAt) + ". Version 1.2.0 or newer guards every Instagram and Reddit page."
+                        : "Waiting. Open instagram.com in Firefox with the add-on on. Feed Guard starts guarding the first time it sees the add-on.",
                 null, null);
 
         boolean unreadable = p.getBoolean(Guard.K_URL_UNREADABLE, false);

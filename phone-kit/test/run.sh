@@ -329,8 +329,8 @@ check "Shortcuts off" is "$(f od/shortcuts)" 0
 check "the restrictions went through the API" grep -q "ADD_USER_RESTRICTION no_safe_boot" "$P/od/api.log"
 check "the API never set Debug features" not grep -q no_debugging_features "$P/od/api.log"
 check "the setup key is gone from the Mac" test ! -e "$(state_dir)api-key"
-check "Feed Guard's settings, pushed" pushed_has '{"id":"allowed_apps","vString":"com.whatsapp, org.telegram.messenger"}'
-check "and imported" config_has '{"id":"only_listed_apps","vBool":false}'
+check "Feed Guard's settings, pushed" pushed_has '{"id":"allowed_apps","v_str":"com.whatsapp, org.telegram.messenger"}'
+check "and imported" config_has '{"id":"only_listed_apps","v_bool":false}'
 check "black and white" is "$(setting secure accessibility_display_daltonizer_enabled)$(setting secure accessibility_display_daltonizer)" 10
 check "the settings file was scanned for the file picker" grep -q "file:///sdcard/Download/feed-guard-settings.json" "$P/scanned"
 check "Firefox opened the NextDNS test" grep -q "^$FF https://test.nextdns.io" "$P/opened"
@@ -534,8 +534,8 @@ make_app org.telegram.messenger 0 12.1 121 launcher
 make_app com.example.game 0 1.0 1 launcher
 printf '%s\nONLY_LISTED_APPS=yes\n' "$BASE_CONF" > "$PHONE_KIT_CONF"
 setup
-check "Firefox goes on the list" pushed_has '"vString":"org.mozilla.firefox, com.whatsapp, org.telegram.messenger"'
-check "list mode on" config_has '{"id":"only_listed_apps","vBool":true}'
+check "Firefox goes on the list" pushed_has '"v_str":"org.mozilla.firefox, com.whatsapp, org.telegram.messenger"'
+check "list mode on" config_has '{"id":"only_listed_apps","v_bool":true}'
 check "the game is paused" paused com.example.game
 check "Gmail is paused" paused com.google.android.gm
 check "WhatsApp isn't" not paused com.whatsapp
@@ -577,9 +577,9 @@ check "done (4)" rc_is 0
 fresh 36
 printf '%s\nBLACK_AND_WHITE=no\nCOLOR_APPS=none\nBLOCK_APPS=com.example.game com.example.chat\n' "$BASE_CONF" > "$PHONE_KIT_CONF"
 setup
-check "colour: grayscale off in the settings" config_has '{"id":"grayscale","vBool":false}'
-check "COLOR_APPS=none goes in as none" config_has '{"id":"color_apps","vString":"none"}'
-check "the extra apps to pause" config_has '{"id":"blocked_apps","vString":"com.example.game, com.example.chat"}'
+check "colour: grayscale off in the settings" config_has '{"id":"grayscale","v_bool":false}'
+check "COLOR_APPS=none goes in as none" config_has '{"id":"color_apps","v_str":"none"}'
+check "the extra apps to pause" config_has '{"id":"blocked_apps","v_str":"com.example.game, com.example.chat"}'
 check "the screen got its colour back" is "$(setting secure accessibility_display_daltonizer_enabled)" 0
 check "done (5)" rc_is 0
 

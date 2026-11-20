@@ -54,7 +54,7 @@ import json, sys
 d = json.load(open(sys.argv[1]))
 assert isinstance(d, list)
 for x in d:
-    assert isinstance(x, dict) and set(x) <= {"id", "vInt", "vString", "vBool", "vList"} and "id" in x
+    assert isinstance(x, dict) and set(x) <= {"id", "v_int", "v_str", "v_bool", "v_list"} and "id" in x
     assert len(x) == 2
 ' "$file" 2>/dev/null; then
       cp "$file" "$P/pkg/$FG/config"

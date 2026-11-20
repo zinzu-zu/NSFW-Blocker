@@ -155,8 +155,8 @@ fg_config() {
   if [ ! -f "$P/pkg/$FG/config" ]; then printf '\n\n\n\n'; return; fi
   tr '{' '\n' < "$P/pkg/$FG/config" | awk -F'"' '
     $2 == "id" {
-      if ($6 == "vString") v[$4] = $8
-      else if ($6 == "vBool") { b = $7; gsub(/[^a-z]/, "", b); v[$4] = b }
+      if ($6 == "v_str") v[$4] = $8
+      else if ($6 == "v_bool") { b = $7; gsub(/[^a-z]/, "", b); v[$4] = b }
     }
     END { print v["grayscale"]; print v["allowed_apps"]; print v["blocked_apps"]; print v["only_listed_apps"] }'
 }

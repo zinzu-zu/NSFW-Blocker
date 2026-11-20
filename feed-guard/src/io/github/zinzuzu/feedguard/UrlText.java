@@ -89,6 +89,46 @@ final class UrlText {
         return false;
     }
 
+    // The pages where add-on 1.1.x shows its "feed is turned off" panel. Kept in
+    // step with FEED_PATHS in the add-on's instagram.js and content.js.
+    private static final Pattern IG_FEED = Pattern.compile("(?i)^/(explore|reels)?/?$");
+    private static final Pattern REDDIT_FEED = Pattern.compile(
+            "(?i)^/((best|hot|new|top|rising|home|controversial)|r/(popular|all)(/(best|hot|new|top|rising|controversial))?)?/?$");
+
+    /**
+     * The path of the last address-like word, without query or fragment, or null
+     * if the word shows no path at all (a bare host), so the page isn't known.
+     */
+    static String path(CharSequence text) {
+        if (text == null) return null;
+        String[] words = text.toString().trim().split("\\s+");
+        for (int i = words.length - 1; i >= 0; i--) {
+            if (hostOfWord(words[i]) == null) continue;
+            String w = words[i].trim().replaceAll("[\"')\\]>,;:”’]+$", "");
+            while (w.endsWith(".")) w = w.substring(0, w.length() - 1);
+            int scheme = w.lastIndexOf("://");
+            if (scheme >= 0) w = w.substring(scheme + 3);
+            int slash = w.indexOf('/');
+            if (slash < 0) return null;
+            String rest = w.substring(slash);
+            int cut = rest.length();
+            for (char stop : new char[] {'?', '#'}) {
+                int at = rest.indexOf(stop);
+                if (at >= 0 && at < cut) cut = at;
+            }
+            return rest.substring(0, cut);
+        }
+        return null;
+    }
+
+    /** True if this is a page where add-on 1.1.x shows its feed panel; false if not or unknown. */
+    static boolean isFeedPage(String host, String path) {
+        if (host == null || path == null) return false;
+        if (host.equals("instagram.com") || host.endsWith(".instagram.com")) return IG_FEED.matcher(path).matches();
+        if (host.equals("reddit.com") || host.endsWith(".reddit.com")) return REDDIT_FEED.matcher(path).matches();
+        return false;
+    }
+
     /** Fallback for when the address bar can't be read: the page title names Instagram or Reddit. */
     static boolean titleLooksGuarded(CharSequence title) {
         return title != null && GUARDED_TITLE.matcher(title).find();

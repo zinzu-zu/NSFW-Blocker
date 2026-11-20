@@ -571,17 +571,19 @@ locks_complete() {
 
 json_list() { printf '%s' "$1" | tr ' ' '\n' | awk 'NF && !seen[$0]++' | paste -s -d, - | sed 's/,/, /g'; }
 
+# OwnDroid 8.4's import file: a list of AppRestrictionValue, whose fields are
+# serialised as v_int, v_str, v_bool and v_list. Any other name fails the import.
 feed_guard_json() {
   local allowed=$C_APP_LIST
   [ "$C_ONLY_LISTED_APPS" = no ] || allowed="$FIREFOX $allowed"
   printf '['
-  printf '{"id":"allowed_apps","vString":"%s"}' "$(json_list "$allowed")"
-  if [ "$C_ONLY_LISTED_APPS" = yes ]; then printf ',{"id":"only_listed_apps","vBool":true}'
-  else printf ',{"id":"only_listed_apps","vBool":false}'; fi
-  if [ "$C_BLACK_AND_WHITE" = yes ]; then printf ',{"id":"grayscale","vBool":true}'
-  else printf ',{"id":"grayscale","vBool":false}'; fi
-  [ -z "$C_COLOR_APPS" ] || printf ',{"id":"color_apps","vString":"%s"}' "$(json_list "$C_COLOR_APPS")"
-  [ -z "$C_BLOCK_APPS" ] || printf ',{"id":"blocked_apps","vString":"%s"}' "$(json_list "$C_BLOCK_APPS")"
+  printf '{"id":"allowed_apps","v_str":"%s"}' "$(json_list "$allowed")"
+  if [ "$C_ONLY_LISTED_APPS" = yes ]; then printf ',{"id":"only_listed_apps","v_bool":true}'
+  else printf ',{"id":"only_listed_apps","v_bool":false}'; fi
+  if [ "$C_BLACK_AND_WHITE" = yes ]; then printf ',{"id":"grayscale","v_bool":true}'
+  else printf ',{"id":"grayscale","v_bool":false}'; fi
+  [ -z "$C_COLOR_APPS" ] || printf ',{"id":"color_apps","v_str":"%s"}' "$(json_list "$C_COLOR_APPS")"
+  [ -z "$C_BLOCK_APPS" ] || printf ',{"id":"blocked_apps","v_str":"%s"}' "$(json_list "$C_BLOCK_APPS")"
   printf ']\n'
 }
 
@@ -705,8 +707,10 @@ step_owner() {
       "too), or factory-reset the phone and skip signing in. You sign in once OwnDroid is in place."
   fi
   if [ "$users" -gt 1 ]; then
-    stop "The phone has more than one user: a guest, a private space or a work profile." \
-      "Remove them (Settings › System › Users, or delete the private space)."
+    stop "The phone has more than one user: a guest, a private space, a work profile, or" \
+      "Android 16's hidden \"Supervising\" profile. Remove them (Settings › System › Users," \
+      "or delete the private space). See them with: adb shell pm list users" \
+      "and remove one by its number with: adb shell pm remove-user NUMBER"
   fi
   install_apk "$OWNDROID" "$OWNDROID_APK"
   out=$(on_phone "dpm set-device-owner $OWNDROID_ADMIN")
