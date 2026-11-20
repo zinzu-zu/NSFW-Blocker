@@ -24,6 +24,7 @@ public final class LogicTest {
         urlText();
         markerText();
         coverDecision();
+        feedPanelRule();
         appRules();
         listRule();
         colourRules();
@@ -195,6 +196,90 @@ public final class LogicTest {
         in = page(IG, false, true, 3600);
         in.markerLabel = "feedguard " + ((WALL - 20_000) / 1000);
         check("stale marker: covered", d.decide(in).cover);
+    }
+
+    // --- Add-on 1.1.x: the feed panel -------------------------------------
+
+    static CoverDecision.Input panelPage(String url, boolean panel, boolean panelArmed, long t) {
+        CoverDecision.Input in = page(url, false, false, t);
+        in.feedPanel = panel;
+        in.panelArmed = panelArmed;
+        return in;
+    }
+
+    static void feedPanelRule() {
+        check("path: home", "/".equals(UrlText.path("Instagram instagram.com/. Search or enter address")));
+        check("path: with query", "/explore/".equals(UrlText.path("https://www.instagram.com/explore/?hl=en")));
+        check("path: bare host is unknown", UrlText.path("Instagram instagram.com. Search or enter address") == null);
+        check("path: none for hint only", UrlText.path("Search or enter address") == null);
+        check("feed: Instagram home", UrlText.isFeedPage("www.instagram.com", "/"));
+        check("feed: Instagram Explore", UrlText.isFeedPage("instagram.com", "/explore/"));
+        check("feed: Instagram Reels tab", UrlText.isFeedPage("instagram.com", "/reels/"));
+        check("not feed: a reel", !UrlText.isFeedPage("instagram.com", "/reels/abc123/"));
+        check("not feed: a profile", !UrlText.isFeedPage("instagram.com", "/someone/"));
+        check("not feed: messages", !UrlText.isFeedPage("instagram.com", "/direct/inbox/"));
+        check("feed: Reddit front page", UrlText.isFeedPage("www.reddit.com", "/"));
+        check("feed: Reddit best", UrlText.isFeedPage("reddit.com", "/best/"));
+        check("feed: r/popular", UrlText.isFeedPage("reddit.com", "/r/popular/"));
+        check("feed: r/all/top", UrlText.isFeedPage("old.reddit.com", "/r/all/top"));
+        check("not feed: a subreddit", !UrlText.isFeedPage("reddit.com", "/r/askreddit/"));
+        check("not feed: unknown path", !UrlText.isFeedPage("reddit.com", null));
+        check("not feed: other site", !UrlText.isFeedPage("example.org", "/"));
+        check("panel by id", MarkerText.looksLikeFeedPanel("rnb-ig-cover", null, null));
+        check("panel by text", MarkerText.looksLikeFeedPanel(null, "The home feed is turned off.", null));
+        check("not a panel", !MarkerText.looksLikeFeedPanel("main", "The feed", null));
+
+        final String REDDIT = "Reddit reddit.com/. Search or enter address";
+        final String SUB = "r/askreddit reddit.com/r/askreddit/. Search or enter address";
+        final String IG_BARE = "Instagram instagram.com. Search or enter address";
+
+        CoverDecision d = new CoverDecision();
+        CoverDecision.Outcome o = d.decide(panelPage(IG, false, false, 0));
+        d.decide(panelPage(IG, false, false, 0));
+        o = d.decide(panelPage(IG, false, false, 60_000));
+        check("1.1.x: not armed, no panel: no cover", !o.cover && !o.armPanel);
+
+        d = new CoverDecision();
+        o = d.decide(panelPage(IG, true, false, 0));
+        check("1.1.x: first panel arms the panel rule", o.armPanel && !o.arm && !o.cover);
+
+        d = new CoverDecision();
+        check("1.1.x: panel there: no cover", !d.decide(panelPage(IG, true, true, 0)).cover
+                && !d.decide(panelPage(IG, true, true, 30_000)).cover);
+
+        d = new CoverDecision();
+        d.decide(panelPage(IG, false, true, 0));
+        check("1.1.x: panel missing: grace", !d.decide(panelPage(IG, false, true, 2400)).cover);
+        check("1.1.x: panel missing on the feed: covered", d.decide(panelPage(IG, false, true, 2500)).cover);
+        check("1.1.x: leaving for messages uncovers", !d.decide(panelPage(IG_DM, false, true, 4000)).cover);
+        check("1.1.x: messages never covered", !d.decide(panelPage(IG_DM, false, true, 60_000)).cover);
+
+        d = new CoverDecision();
+        d.decide(panelPage(REDDIT, false, true, 0));
+        check("1.1.x: Reddit front page without panel: covered", d.decide(panelPage(REDDIT, false, true, 3000)).cover);
+        d = new CoverDecision();
+        d.decide(panelPage(SUB, false, true, 0));
+        check("1.1.x: a subreddit isn't checked", !d.decide(panelPage(SUB, false, true, 30_000)).cover);
+
+        d = new CoverDecision();
+        d.decide(panelPage(IG_BARE, false, true, 0));
+        check("1.1.x: bare host, page unknown: not covered", !d.decide(panelPage(IG_BARE, false, true, 30_000)).cover);
+
+        d = new CoverDecision();
+        d.decide(panelPage(IG, false, true, 0));
+        d.decide(panelPage(IG, false, true, 3000));
+        CoverDecision.Input in = panelPage(null, false, true, 5000);
+        in.pageTitle = "Instagram";
+        check("1.1.x: no address bar: not judged", !d.decide(in).cover);
+
+        // With 1.2.0's marker, the marker rule wins.
+        d = new CoverDecision();
+        in = page(IG, true, true, 0);
+        in.panelArmed = true;
+        check("marker fresh, no panel: no cover", !d.decide(in).cover);
+        in = page(IG, true, true, 30_000);
+        in.panelArmed = true;
+        check("still no cover", !d.decide(in).cover);
     }
 
     // --- App rules ---------------------------------------------------------

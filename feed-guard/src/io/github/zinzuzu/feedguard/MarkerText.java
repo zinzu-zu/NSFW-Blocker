@@ -19,6 +19,24 @@ final class MarkerText {
     /** Allowance for a label slightly ahead of the phone's clock. */
     static final long MAX_AHEAD_SECONDS = 5;
 
+    /**
+     * Add-on 1.1.x has no marker, but on the feed pages it shows its own panel:
+     * a div with one of these ids, headed by one of these lines.
+     */
+    static final String[] PANEL_IDS = {"rnb-ig-cover", "rnb-feed-notice"};
+    static final String[] PANEL_TEXTS = {"The feed is turned off.", "The home feed is turned off."};
+
+    static boolean looksLikeFeedPanel(String resourceId, CharSequence text, CharSequence desc) {
+        if (resourceId != null) {
+            for (String id : PANEL_IDS) if (resourceId.equals(id)) return true;
+        }
+        for (String t : PANEL_TEXTS) {
+            if (text != null && text.toString().trim().startsWith(t)) return true;
+            if (desc != null && desc.toString().trim().startsWith(t)) return true;
+        }
+        return false;
+    }
+
     static boolean looksLikeMarker(CharSequence text) {
         return text != null && text.toString().trim().startsWith(PREFIX);
     }

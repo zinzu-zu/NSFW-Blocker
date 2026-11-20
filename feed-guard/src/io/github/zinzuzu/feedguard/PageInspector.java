@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Looks at Firefox's windows through accessibility and reports three things:
- * the address in the address bar, whether a page is loading, and whether the
- * add-on's marker is on the page.
+ * Looks at Firefox's windows through accessibility and reports four things:
+ * the address in the address bar, whether a page is loading, whether the
+ * add-on's marker is on the page, and whether add-on 1.1.x's feed panel is.
  *
  * Address bar ids, checked against Firefox's source in November 2026:
  * - "ADDRESSBAR_URL_BOX": the Compose toolbar's origin button. Its description
@@ -38,6 +38,8 @@ final class PageInspector {
         boolean webContent;
         String pageTitle;
         String markerLabel;
+        /** Add-on 1.1.x's "feed is turned off" panel is on the page. */
+        boolean feedPanel;
         int nodesVisited;
     }
 
@@ -109,6 +111,7 @@ final class PageInspector {
             s.nodesVisited++;
             String text = str(n.getText());
             String desc = str(n.getContentDescription());
+            if (!s.feedPanel && MarkerText.looksLikeFeedPanel(n.getViewIdResourceName(), text, desc)) s.feedPanel = true;
             if (MarkerText.looksLikeMarker(text)) return text;
             if (MarkerText.looksLikeMarker(desc)) return desc;
             if (MarkerText.ELEMENT_ID.equals(n.getViewIdResourceName())) return text.isEmpty() ? desc : text;

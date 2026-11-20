@@ -61,6 +61,7 @@ public final class GuardService extends AccessibilityService {
     private volatile boolean firefoxWasVisible;
     private long lastCheckAt;
     private long lastMarkerWrite, lastUrlWrite;
+    private long lastPanelWrite;
     private long urlMissingSince = -1;
     private boolean receiversRegistered;
     private final Set<String> freshInstalls = new HashSet<>();
@@ -207,7 +208,9 @@ public final class GuardService extends AccessibilityService {
         in.loading = snap.loading;
         in.pageTitle = snap.pageTitle;
         in.markerLabel = snap.markerLabel;
+        in.feedPanel = snap.feedPanel;
         in.armed = prefs.getLong(Guard.K_ARMED_AT, 0) > 0;
+        in.panelArmed = prefs.getLong(Guard.K_PANEL_ARMED_AT, 0) > 0;
         in.nowElapsedMs = lastCheckAt;
         in.nowWallMs = System.currentTimeMillis();
         CoverDecision.Outcome out = decision.decide(in);
@@ -237,6 +240,18 @@ public final class GuardService extends AccessibilityService {
             Guard.notify(this, Guard.N_ARMED, "Feed Guard is on",
                     "It saw the add-on running. From now on, Instagram and Reddit only open in Firefox while the add-on is on.",
                     new Intent(this, MainActivity.class));
+        }
+        if (out.armPanel) {
+            e = (e == null ? prefs.edit() : e).putLong(Guard.K_PANEL_ARMED_AT, now);
+            if (!in.armed) {
+                Guard.notify(this, Guard.N_ARMED, "Feed Guard is on",
+                        "It saw add-on 1.1's feed panel. From now on, Instagram's and Reddit's feeds only open in Firefox while the add-on is on.",
+                        new Intent(this, MainActivity.class));
+            }
+        }
+        if (in.feedPanel && in.nowElapsedMs - lastPanelWrite > STATUS_WRITE_MS) {
+            lastPanelWrite = in.nowElapsedMs;
+            e = (e == null ? prefs.edit() : e).putLong(Guard.K_PANEL_SEEN_AT, now);
         }
         if (out.markerFresh && in.nowElapsedMs - lastMarkerWrite > STATUS_WRITE_MS) {
             lastMarkerWrite = in.nowElapsedMs;

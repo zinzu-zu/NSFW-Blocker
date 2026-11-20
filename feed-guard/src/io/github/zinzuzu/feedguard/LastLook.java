@@ -16,8 +16,10 @@ final class LastLook {
         b.append("Address bar: ").append(s.urlBoxFound ? (host == null ? "found, no address" : host) : "not found");
         b.append("\nPage: ").append(s.webContent ? "found" : "not found");
         b.append("\nAdd-on marker: ").append(s.markerLabel == null ? "not on the page" : (o.markerFresh ? "fresh" : "stale"));
+        b.append("\nAdd-on 1.1 feed panel: ").append(s.feedPanel ? "on the page" : "not on the page");
         b.append("\nInstagram or Reddit page: ").append(o.guardedPage ? "yes" : "no");
         b.append("\nLoading: ").append(s.loading ? "yes" : "no");
+        if (o.feedPanelMissing) b.append("\nFeed page without the panel: yes");
         b.append("\nCovered: ").append(o.cover ? "yes" : "no");
         b.append("\nItems checked: ").append(s.nodesVisited);
         summary = b.toString();

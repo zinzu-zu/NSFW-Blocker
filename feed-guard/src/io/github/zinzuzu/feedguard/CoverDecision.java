@@ -12,6 +12,13 @@ package io.github.zinzuzu.feedguard;
  * it sees a fresh marker. That way it can be installed before the add-on update
  * that adds the marker reaches the phone, without locking you out of Instagram.
  *
+ * Add-on 1.1.x has no marker. For it there's a narrower rule: on the feed pages
+ * (Instagram's home, Explore and Reels tab; Reddit's front page, r/popular and
+ * r/all) the add-on's own "feed is turned off" panel must be on the page. This
+ * rule is armed separately, the first time the panel is seen, and only applies
+ * where the address bar shows the page's path. Other pages aren't checked in
+ * this mode, so a direct link to a profile or subreddit isn't caught.
+ *
  * Pure Java, so it can be tested off the phone.
  */
 final class CoverDecision {
@@ -30,7 +37,11 @@ final class CoverDecision {
         boolean loading;
         String pageTitle;
         String markerLabel;
+        /** Add-on 1.1.x's feed panel is on the page. */
+        boolean feedPanel;
         boolean armed;
+        /** The 1.1.x feed-panel rule is armed. */
+        boolean panelArmed;
         long nowElapsedMs;
         long nowWallMs;
     }
@@ -41,6 +52,10 @@ final class CoverDecision {
         boolean markerFresh;
         /** First fresh marker seen: the caller should record that the guard is armed. */
         boolean arm;
+        /** First feed panel seen: the caller should record that the 1.1.x rule is armed. */
+        boolean armPanel;
+        /** A feed page whose 1.1.x panel is missing. */
+        boolean feedPanelMissing;
         /** The page was judged from the address bar rather than memory or the title. */
         boolean fromAddressBar;
     }
@@ -80,8 +95,16 @@ final class CoverDecision {
 
         out.arm = out.markerFresh && !in.armed;
         boolean armed = in.armed || out.arm;
+        out.armPanel = in.feedPanel && !in.panelArmed;
+        boolean panelArmed = in.panelArmed || out.armPanel;
 
-        if (armed && out.guardedPage && !out.markerFresh) {
+        // The 1.1.x rule needs the address bar right now: memory or a title can't say which page it is.
+        boolean feedPage = in.urlBoxFound && out.guardedPage
+                && UrlText.isFeedPage(UrlText.host(in.urlText), UrlText.path(in.urlText));
+        out.feedPanelMissing = panelArmed && feedPage && !in.feedPanel;
+        boolean missing = out.guardedPage && !out.markerFresh && (armed || out.feedPanelMissing);
+
+        if (missing) {
             if (missingSince < 0) missingSince = in.nowElapsedMs;
             long grace = in.loading ? LOADING_GRACE_MS : GRACE_MS;
             boolean seenBefore = in.urlBoxFound && in.urlText != null && in.urlText.equals(coveredUrl)

@@ -29,6 +29,8 @@ final class Guard {
 
     // Stored state.
     static final String K_ARMED_AT = "armedAt";              // wall-clock ms when the marker was first seen; 0 = not yet
+    static final String K_PANEL_ARMED_AT = "panelArmedAt";   // wall-clock ms when add-on 1.1.x's feed panel was first seen; 0 = not yet
+    static final String K_PANEL_SEEN_AT = "panelSeenAt";     // wall-clock ms
     static final String K_MARKER_SEEN_AT = "markerSeenAt";   // wall-clock ms
     static final String K_URL_SEEN_AT = "urlSeenAt";         // wall-clock ms
     static final String K_URL_UNREADABLE = "urlUnreadable";  // the address bar hasn't been found for a while
@@ -56,7 +58,8 @@ final class Guard {
     }
 
     static boolean armed(Context c) {
-        return prefs(c).getLong(K_ARMED_AT, 0) > 0;
+        SharedPreferences p = prefs(c);
+        return p.getLong(K_ARMED_AT, 0) > 0 || p.getLong(K_PANEL_ARMED_AT, 0) > 0;
     }
 
     /** Whether Feed Guard is switched on in Settings > Accessibility (whether or not it's running yet). */
