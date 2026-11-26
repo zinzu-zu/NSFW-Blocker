@@ -120,6 +120,8 @@ public final class MainActivity extends Activity {
 
         if (!banking) bankRow(cfg, secure);
 
+        newsRow(cfg);
+
         long armedAt = p.getLong(Guard.K_ARMED_AT, 0);
         long markerAt = p.getLong(Guard.K_MARKER_SEEN_AT, 0);
         long panelArmedAt = p.getLong(Guard.K_PANEL_ARMED_AT, 0);
@@ -263,6 +265,36 @@ public final class MainActivity extends Activity {
                             + "tap Turn back on now in the notification.",
                     null, null);
         }
+    }
+
+    /** The morning news block: running until when, or what starts it. */
+    private void newsRow(Config cfg) {
+        if (!cfg.newsBlock) {
+            row(true, "Morning news block", "Off in OwnDroid's settings for Feed Guard.", null, null);
+            return;
+        }
+        long until = NewsBlock.endsAt(this);
+        List<String> apps = new ArrayList<>(NewsBlock.installedNewsApps(cfg, getPackageManager().getInstalledApplications(0)));
+        Collections.sort(apps);
+        String appsText = apps.isEmpty() ? "No news apps are installed." : "News apps: " + Guard.labels(this, apps) + ".";
+        if (until > 0) {
+            row(true, "Morning news block",
+                    "On until " + NewsBlock.time(this, until) + ". News sites are covered in Firefox and news apps are paused. "
+                            + appsText, null, null);
+        } else {
+            row(true, "Morning news block",
+                    "Ready. When the phone has been left alone for " + cfg.newsGapHours + " hours or more and you unlock it between "
+                            + hour(cfg.newsFromHour) + " and " + hour(cfg.newsUntilHour) + ", news is off for "
+                            + cfg.newsMinutes + " minutes: " + cfg.newsSites.size() + " news sites in Firefox, and the news apps. "
+                            + appsText, null, null);
+        }
+    }
+
+    private String hour(int h) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(java.util.Calendar.HOUR_OF_DAY, h);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        return NewsBlock.time(this, cal.getTimeInMillis());
     }
 
     /** Which colour apps are installed, in words. */

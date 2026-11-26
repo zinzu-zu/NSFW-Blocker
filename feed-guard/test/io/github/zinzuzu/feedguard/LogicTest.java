@@ -14,7 +14,7 @@ import java.util.TreeSet;
  * Tests for the parts of Feed Guard that don't need a phone: reading the
  * address bar, the add-on's marker, the cover decision, the app rules (with
  * "Only apps on the list"), when colour is allowed, the accessibility
- * services list, banking mode and signature pins.
+ * services list, banking mode, signature pins and the morning news block.
  * Run with test/run.sh. No test framework, so it runs on a plain JDK.
  */
 public final class LogicTest {
@@ -33,6 +33,8 @@ public final class LogicTest {
         bankRules();
         bankTexts();
         pins();
+        newsRules();
+        newsAppRule();
         System.out.println(passed + " passed, " + failed + " failed");
         if (failed > 0) System.exit(1);
     }
@@ -626,6 +628,79 @@ public final class LogicTest {
         eq("pins: nothing stored", 0, Pins.parse(null).size());
         eq("hex", "00ff10", Pins.hex(new byte[] {0, (byte) 0xff, 0x10}));
         eq("bytes", "00ff10", Pins.hex(Pins.bytes("00ff10")));
+    }
+
+    // --- Morning news block ------------------------------------------------
+
+    static final long H = 3_600_000L;
+
+    static void newsRules() {
+        Set<String> sites = NewsRules.DEFAULT_SITES;
+        check("g1 is news", NewsRules.isNewsHost("g1.globo.com", sites));
+        check("Folha (under UOL) is news", NewsRules.isNewsHost("www1.folha.uol.com.br", sites));
+        check("bbc.com is news", NewsRules.isNewsHost("www.bbc.com", sites));
+        check("Google News is news", NewsRules.isNewsHost("news.google.com", sites));
+        check("google.com isn't news", !NewsRules.isNewsHost("www.google.com", sites));
+        check("a lookalike isn't news", !NewsRules.isNewsHost("notglobo.com", sites));
+        check("no host isn't news", !NewsRules.isNewsHost(null, sites));
+        check("address bar to host to news",
+                NewsRules.isNewsHost(UrlText.host("g1 g1.globo.com/politica/. Search or enter address"), sites));
+
+        eq("sites setting, cleaned", set("g1.globo.com", "example.org", "folha.com.br"),
+                NewsRules.listOrDefault(" https://g1.globo.com/x, www.Example.org;folha.com.br ", sites));
+        eq("sites unset is the default", sites, NewsRules.listOrDefault(null, sites));
+        eq("sites none", Collections.<String>emptySet(), NewsRules.listOrDefault("none", sites));
+        eq("apps unset is the default", NewsRules.DEFAULT_APPS, NewsRules.appsOrDefault(null));
+        eq("apps keep their case", set("mnn.Android"), NewsRules.appsOrDefault("mnn.Android"));
+
+        // The gap: same start-up uses time since start-up; the clock can't fake it.
+        eq("gap, same start-up", 7 * H, NewsRules.gapMs(3, 1 * H, 1_000, 3, 8 * H, 1_000 + 1));
+        eq("never put down", -1L, NewsRules.gapMs(-1, 0, 0, 3, 8 * H, 5 * H));
+        eq("gap across a restart: the clock", 7 * H, NewsRules.gapMs(3, 20 * H, 10 * H, 4, 1 * H, 17 * H));
+        eq("gap across a restart: never less than time since start-up", 2 * H,
+                NewsRules.gapMs(3, 20 * H, 10 * H, 4, 2 * H, 10 * H));
+        eq("time since start-up went back: a restart even without a boot count", 7 * H,
+                NewsRules.gapMs(-1, 20 * H, 10 * H, -1, 1 * H, 17 * H));
+
+        check("6 AM is in 6-12", NewsRules.inWindow(6, 6, 12));
+        check("11 AM is in 6-12", NewsRules.inWindow(11, 6, 12));
+        check("noon isn't in 6-12", !NewsRules.inWindow(12, 6, 12));
+        check("5 AM isn't in 6-12", !NewsRules.inWindow(5, 6, 12));
+        check("window across midnight", NewsRules.inWindow(1, 22, 3) && !NewsRules.inWindow(4, 22, 3));
+        check("same hours: all day", NewsRules.inWindow(17, 0, 0));
+
+        check("7 hours, at 7 AM: woke up", NewsRules.wokeUp(7 * H, 6, 7, 6, 12));
+        check("exactly 6 hours: woke up", NewsRules.wokeUp(6 * H, 6, 7, 6, 12));
+        check("5 hours: not yet", !NewsRules.wokeUp(5 * H, 6, 7, 6, 12));
+        check("8 hours, at 3 PM: not the morning", !NewsRules.wokeUp(8 * H, 6, 15, 6, 12));
+        check("unknown gap: no", !NewsRules.wokeUp(-1, 6, 7, 6, 12));
+
+        // Counting the block's hour.
+        eq("counted, same start-up", 25 * 60_000L, NewsRules.counted(10 * 60_000L, 3, 100_000, 3, 100_000 + 15 * 60_000L));
+        eq("counted, after a restart: what was stored", 10 * 60_000L, NewsRules.counted(10 * 60_000L, 3, 50 * H, 4, 60_000));
+        eq("counted, time went back: a restart", 10 * 60_000L, NewsRules.counted(10 * 60_000L, -1, 50 * H, -1, 60_000));
+        eq("clamp", 240, NewsRules.clamp(9999, 1, 240));
+    }
+
+    static void newsAppRule() {
+        AppRules.Inputs in = phone();
+        in.installed = new HashSet<>(in.installed);
+        in.installed.add("com.globo.g1.app");
+        in.newsApps = set("com.globo.g1.app", "com.android.vending");
+        in.allowed = set("com.globo.g1.app");
+        AppRules.Plan off = AppRules.plan(in);
+        check("no block: listed news app open", !off.pause.contains("com.globo.g1.app"));
+
+        in.newsBlock = true;
+        AppRules.Plan on = AppRules.plan(in);
+        check("block: news app paused even when listed", on.pause.contains("com.globo.g1.app"));
+        check("block: the Play Store is never a news app", !on.pause.contains("com.android.vending"));
+
+        in.newsBlock = false;
+        in.ours = set("com.globo.g1.app");
+        check("block over: its pause is lifted", AppRules.plan(in).release.contains("com.globo.g1.app"));
+        in.newsBlock = true;
+        check("block on: its pause stays", !AppRules.plan(in).release.contains("com.globo.g1.app"));
     }
 
     // --- Harness -----------------------------------------------------------

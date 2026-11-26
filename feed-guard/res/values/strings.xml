@@ -16,4 +16,18 @@
     <string name="r_color_desc">Package names, separated by commas. Unset, it\'s Google Maps, CoMaps and Organic Maps. Write none for no colour at all.</string>
     <string name="r_blocked_title">Extra apps to pause</string>
     <string name="r_blocked_desc">Package names, separated by commas. Paused like other browsers.</string>
+    <string name="r_news_title">Morning news block</string>
+    <string name="r_news_desc">After the phone has been left alone overnight, the first unlock in the morning turns news off for a while: news sites are covered in Firefox and news apps are paused. On unless turned off here.</string>
+    <string name="r_news_gap_title">Morning news block: hours left alone</string>
+    <string name="r_news_gap_desc">How many hours the phone must go untouched (screen off, or lit only by notifications) to count as a night\'s sleep. Unset, it\'s 6.</string>
+    <string name="r_news_from_title">Morning news block: from hour</string>
+    <string name="r_news_from_desc">The first unlock counts as waking up only from this hour, 0 to 23. Unset, it\'s 6 (6 AM).</string>
+    <string name="r_news_until_title">Morning news block: until hour</string>
+    <string name="r_news_until_desc">... and before this hour, 0 to 23. Unset, it\'s 12 (noon).</string>
+    <string name="r_news_minutes_title">Morning news block: minutes</string>
+    <string name="r_news_minutes_desc">How long news stays off, in minutes, at most 240. Unset, it\'s 60. Time the phone is switched off doesn\'t count.</string>
+    <string name="r_news_sites_title">Morning news block: sites</string>
+    <string name="r_news_sites_desc">Web addresses, separated by commas. Each covers its subdomains too, so globo.com covers g1.globo.com. Unset, it\'s Feed Guard\'s list of Brazilian and international news sites. Write none for no sites.</string>
+    <string name="r_news_apps_title">Morning news block: apps</string>
+    <string name="r_news_apps_desc">Package names, separated by commas. Paused during the block, even if they\'re on your list. Apps that call themselves news apps are paused too. Unset, it\'s Feed Guard\'s list (Google News, g1, CNN, BBC News and others). Write none for only the apps that call themselves news apps.</string>
 </resources>

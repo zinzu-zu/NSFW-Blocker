@@ -51,7 +51,7 @@ final class Guard {
     static final int N_URL_UNREADABLE = 4;
     static final int N_UNPAUSABLE = 5;
     static final int N_NOT_SAME_APP = 6;
-    // 7 is banking mode's own notification (BankMode.N_BANKING).
+    // 7 is banking mode's own notification (BankMode.N_BANKING), 8 the morning news block's (NewsBlock.N_NEWS).
     private static final String CHANNEL = "alerts";
 
     static SharedPreferences prefs(Context c) {
@@ -132,6 +132,9 @@ final class Guard {
             }
             // Without the service nothing knows which app is on screen: black and white, no exceptions.
             if (!GuardService.isRunning()) ColorGuard.enforceAlone(c);
+            // The morning news block: keep its end check scheduled, also after a restart.
+            long newsLeft = NewsBlock.timeLeft(c);
+            if (newsLeft > 0) WatchdogJob.newsEndCheck(c, newsLeft);
         } catch (RuntimeException e) {
             android.util.Log.e(TAG, "check failed", e);
         }

@@ -15,13 +15,15 @@ import android.content.Context;
  *
  * During banking mode it also runs every 20 seconds, to catch apps installed
  * meanwhile, and once just after banking mode's time is up, to switch the
- * guards back on (see BankMode).
+ * guards back on (see BankMode), and once just after the morning news block
+ * ends, to lift its pauses (see NewsBlock).
  */
 public final class WatchdogJob extends JobService {
     private static final int JOB_ID = 4711;
     private static final int JOB_ID_SOON = 4712;
     private static final int JOB_ID_BANK = 4713;
     private static final int JOB_ID_BANK_END = 4714;
+    private static final int JOB_ID_NEWS_END = 4715;
     /** The end-of-banking check runs this long after the end, so the time is surely up. */
     private static final long BANK_END_AFTER_MS = 2_000;
 
@@ -56,6 +58,15 @@ public final class WatchdogJob extends JobService {
         if (js == null) return;
         if (js.getPendingJob(JOB_ID_BANK) == null) once(c, JOB_ID_BANK, BankRules.CHECK_EVERY_MS);
         if (js.getPendingJob(JOB_ID_BANK_END) == null) once(c, JOB_ID_BANK_END, BankMode.timeLeft(c) + BANK_END_AFTER_MS);
+    }
+
+    /**
+     * The morning news block started: one check just after it ends, which lifts
+     * the news apps' pause. (The service ends it on time while it runs; this is
+     * the safety net.)
+     */
+    static void newsEndCheck(Context c, long leftMs) {
+        once(c, JOB_ID_NEWS_END, leftMs + BANK_END_AFTER_MS);
     }
 
     /** A single check after the delay. Replaces one already scheduled under the same id. */

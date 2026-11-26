@@ -39,4 +39,46 @@
         android:description="@string/r_bank_desc"
         android:restrictionType="string"
         android:defaultValue="com.nu.production" />
+    <restriction
+        android:key="news_block"
+        android:title="@string/r_news_title"
+        android:description="@string/r_news_desc"
+        android:restrictionType="bool"
+        android:defaultValue="true" />
+    <restriction
+        android:key="news_gap_hours"
+        android:title="@string/r_news_gap_title"
+        android:description="@string/r_news_gap_desc"
+        android:restrictionType="integer"
+        android:defaultValue="6" />
+    <restriction
+        android:key="news_from_hour"
+        android:title="@string/r_news_from_title"
+        android:description="@string/r_news_from_desc"
+        android:restrictionType="integer"
+        android:defaultValue="6" />
+    <restriction
+        android:key="news_until_hour"
+        android:title="@string/r_news_until_title"
+        android:description="@string/r_news_until_desc"
+        android:restrictionType="integer"
+        android:defaultValue="12" />
+    <restriction
+        android:key="news_minutes"
+        android:title="@string/r_news_minutes_title"
+        android:description="@string/r_news_minutes_desc"
+        android:restrictionType="integer"
+        android:defaultValue="60" />
+    <restriction
+        android:key="news_sites"
+        android:title="@string/r_news_sites_title"
+        android:description="@string/r_news_sites_desc"
+        android:restrictionType="string"
+        android:defaultValue="globo.com, uol.com.br, folha.com.br, estadao.com.br, cnnbrasil.com.br, r7.com, terra.com.br, metropoles.com, poder360.com.br, veja.abril.com.br, exame.com, cartacapital.com.br, gazetadopovo.com.br, infomoney.com.br, band.com.br, sbtnews.sbt.com.br, jovempan.com.br, correiobraziliense.com.br, istoe.com.br, bbc.com, bbc.co.uk, g1.com.br, news.google.com, cnn.com, nytimes.com, theguardian.com, reuters.com, apnews.com, washingtonpost.com, aljazeera.com, bloomberg.com, foxnews.com, nbcnews.com, economist.com, elpais.com, lemonde.fr, news.yahoo.com, msn.com" />
+    <restriction
+        android:key="news_apps"
+        android:title="@string/r_news_apps_title"
+        android:description="@string/r_news_apps_desc"
+        android:restrictionType="string"
+        android:defaultValue="com.google.android.apps.magazines, com.globo.g1.app, com.cnn.mobile.android.phone, mnn.Android, bbc.mobile.news.ww, bbc.mobile.news.uk, com.nytimes.android, com.guardian, com.washingtonpost.rainbow, com.foxnews.android, com.zumobi.msnbc, com.bloomberg.android.plus, com.microsoft.amp.apps.bingnews" />
 </restrictions>
