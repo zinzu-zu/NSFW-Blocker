@@ -27,6 +27,7 @@ public final class LogicTest {
         feedPanelRule();
         appRules();
         listRule();
+        reinstalls();
         colourRules();
         serviceList();
         bankServices();
@@ -423,6 +424,47 @@ public final class LogicTest {
         in.listMode = true;
         in.allowed = set("com.google.android.apps.maps");
         check("a repackaged WhatsApp is paused", AppRules.plan(in).pause.contains("com.whatsapp"));
+    }
+
+    // --- Reinstalled apps --------------------------------------------------
+
+    static void reinstalls() {
+        Map<String, Long> before = new HashMap<>();
+        before.put("org.mozilla.focus", 1_000L);
+        before.put("com.android.chrome", 2_000L);
+        before.put("com.instagram.android", 3_000L);
+        before.put("com.example.gone", 4_000L);
+        Map<String, Long> now = new HashMap<>();
+        now.put("org.mozilla.focus", 9_000L); // uninstalled and installed again
+        now.put("com.android.chrome", 2_000L); // only updated: same time
+        now.put("com.instagram.android", 0L); // Android didn't say
+        now.put("com.whatsapp", 5_000L); // not seen before
+        Set<String> again = AppRules.reinstalled(before, now);
+        eq("reinstalled: only the app with a new first-install time", set("org.mozilla.focus"), new HashSet<>(again));
+        eq("reinstalled: nothing stored yet", 0, AppRules.reinstalled(new HashMap<String, Long>(), now).size());
+
+        // The gap it closes: a browser the rule paused once (handled), reinstalled
+        // while the service was off and didn't hear it, keeps its pause only if it
+        // counts as new again.
+        AppRules.Inputs in = phone();
+        in.handled = set("com.android.chrome", "org.mozilla.focus", "com.instagram.android");
+        in.ours = set("com.android.chrome", "org.mozilla.focus", "com.instagram.android");
+        check("a handled browser isn't paused a second time", !AppRules.plan(in).pause.contains("org.mozilla.focus"));
+        in.handled.removeAll(again);
+        in.ours.removeAll(again);
+        AppRules.Plan plan = AppRules.plan(in);
+        check("a reinstalled browser is paused again", plan.pause.contains("org.mozilla.focus"));
+        check("an updated one isn't", !plan.pause.contains("com.android.chrome"));
+        check("and no pause is lifted", plan.release.isEmpty());
+
+        Map<String, Long> parsed = AppRules.parseTimes(
+                Arrays.asList("org.mozilla.focus=9000", "broken", "=5", "a.b=", "a.c=x", "a.d=-3", "a.e=0", null));
+        Map<String, Long> want = new HashMap<>();
+        want.put("org.mozilla.focus", 9_000L);
+        eq("times: good entries only", want, new HashMap<>(parsed));
+        eq("times: round trip", parsed, AppRules.parseTimes(AppRules.formatTimes(parsed)));
+        eq("times: nothing stored", 0, AppRules.parseTimes(null).size());
+        eq("times: unknown ones aren't stored", 0, AppRules.formatTimes(Collections.singletonMap("a.b", 0L)).size());
     }
 
     // --- Colour ------------------------------------------------------------
