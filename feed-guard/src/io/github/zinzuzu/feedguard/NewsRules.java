@@ -8,13 +8,14 @@ import java.util.Set;
 /**
  * The morning news block. When the phone has been left alone for a long
  * stretch (a night's sleep) and is then unlocked in the morning, news sites
- * are covered in Firefox and news apps are paused for the next hour.
+ * are covered in Firefox and news apps (and YouTube ReVanced) are paused for
+ * the next 2.5 hours.
  *
  * "Left alone" means the screen stayed off, or only lit up for a notification
  * without being unlocked. The stretch is measured from the last time the
  * screen went off after an unlock, to the next unlock.
  *
- * The hour is counted in time the phone is switched on (Android's time since
+ * The time is counted while the phone is switched on (Android's time since
  * start-up), not by the clock, so changing the clock doesn't end it early. A
  * restart in the middle doesn't end it either: the time already counted is
  * stored and the count carries on after the restart.
@@ -28,7 +29,7 @@ final class NewsRules {
     /** How long the phone must be left alone to count as a night's sleep, when news_gap_hours isn't set. */
     static final int DEFAULT_GAP_HOURS = 6;
     /** How long the block lasts, when news_minutes isn't set. */
-    static final int DEFAULT_MINUTES = 60;
+    static final int DEFAULT_MINUTES = 150;
     /** The first unlock counts as waking up only from this hour (local time) ... */
     static final int DEFAULT_FROM_HOUR = 6;
     /** ... until this hour. An afternoon away from the phone doesn't start the block. */
@@ -75,7 +76,7 @@ final class NewsRules {
             "com.zumobi.msnbc",                  // NBC News
             "com.bloomberg.android.plus",
             "com.microsoft.amp.apps.bingnews",   // Microsoft Start
-            // Not news, but no better first hour either: YouTube ReVanced, and the
+            // Not news, but no better first hours either: YouTube ReVanced, and the
             // forks with their own package names (ReVanced Extended, Vanced).
             "app.revanced.android.youtube",
             "app.rvx.android.youtube",

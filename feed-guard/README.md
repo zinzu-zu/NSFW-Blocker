@@ -10,7 +10,7 @@ Since 0.2.0 it can also turn the phone into a dumbphone: **the screen stays blac
 
 Since 0.3.0 bank apps such as Nubank open on the locked phone too: Feed Guard switches itself and Watch Limit off for 10 minutes while one opens, with Firefox and YouTube paused meanwhile (see Banking mode).
 
-Since 0.4.0 **news is off for the first hour of the day**: after the phone has been left alone overnight, the first unlock in the morning covers news sites in Firefox and pauses news apps for an hour (see Morning news block).
+Since 0.4.0 **news and YouTube ReVanced are off for the first 2.5 hours of the day**: after the phone has been left alone overnight, the first unlock in the morning covers news sites in Firefox and pauses news apps and YouTube ReVanced for 2.5 hours (see Morning news block).
 
 ## What it does
 
@@ -46,10 +46,10 @@ Feed Guard can't tell when the bank app closes: the part of it that watches the 
 ### Morning news block (0.4.0)
 
 - **What starts it.** The phone was left alone for **6 hours or more**, and you unlock it **between 6 AM and noon**. "Left alone" means the screen stayed off, or lit up only for a notification without being unlocked. The stretch runs from the last time the screen went off after an unlock (or the phone shut down) to the next unlock. An afternoon away from the phone doesn't count, because of the morning window.
-- **What it blocks, for 60 minutes.** News sites in Firefox get a cover saying when they open again, add-on or not. News apps are paused, even apps on your list, and unpaused when the hour is up. Other browsers are paused anyway. The status screen shows when the block ends and which news apps it found.
+- **What it blocks, for 2.5 hours (150 minutes).** News sites in Firefox get a cover saying when they open again, add-on or not. News apps and YouTube ReVanced are paused, even apps on your list, and unpaused when the time is up. Other browsers are paused anyway. The status screen shows when the block ends and which news apps it found.
 - **The sites.** Brazil: globo.com (g1, O Globo, Valor, GE, and also Globoplay), uol.com.br (with Folha, and also UOL Mail), folha.com.br, estadao.com.br, cnnbrasil.com.br, r7.com, terra.com.br, metropoles.com, poder360.com.br, veja.abril.com.br, exame.com, cartacapital.com.br, gazetadopovo.com.br, infomoney.com.br, band.com.br, sbtnews.sbt.com.br, jovempan.com.br, correiobraziliense.com.br, istoe.com.br. International: bbc.com, bbc.co.uk, news.google.com, cnn.com, nytimes.com, theguardian.com, reuters.com, apnews.com, washingtonpost.com, aljazeera.com, bloomberg.com, foxnews.com, nbcnews.com, economist.com, elpais.com, lemonde.fr, news.yahoo.com, msn.com. Each covers its subdomains.
 - **The apps.** Google News, g1, CNN, AP News, BBC News, The New York Times, The Guardian, The Washington Post, Fox News, NBC News, Bloomberg and Microsoft Start, and YouTube ReVanced (with ReVanced Extended and Vanced), plus any app that calls itself a news app (Android's "news" app category).
-- **It can't be cut short.** The hour is counted in time the phone is on, not by the clock, so changing the clock doesn't end it, and a restart doesn't either: the count carries on afterwards. Time with the phone switched off doesn't count. Changing the settings, or turning it off, happens in OwnDroid, behind its lock. Banking mode during the hour pauses Firefox anyway, and the news apps stay paused.
+- **It can't be cut short.** The time is counted while the phone is on, not by the clock, so changing the clock doesn't end it, and a restart doesn't either: the count carries on afterwards. Time with the phone switched off doesn't count. Changing the settings, or turning it off, happens in OwnDroid, behind its lock. Banking mode during the block pauses Firefox anyway, and the news apps stay paused.
 - **What it keeps.** When the phone was last put down, and whether a block runs. Nothing else, and nothing leaves the phone.
 
 ## What it reads
@@ -64,7 +64,7 @@ Do this during the OwnDroid setup in the "Tighter Android lock" guide. **Install
 
 1. **Install it from your Mac**, while USB debugging is still on, and give it the secure settings permission:
    ```
-   adb install -r FeedGuard-0.4.2.apk
+   adb install -r FeedGuard-0.4.3.apk
    adb shell pm grant io.github.zinzuzu.feedguard android.permission.WRITE_SECURE_SETTINGS
    ```
    Installing over adb avoids Android's "restricted setting" block on accessibility for downloaded apps, and Google's sideloading checks. The screen turns black and white once step 2 below is done.
@@ -91,7 +91,7 @@ OwnDroid › Applications › Feed Guard › **Managed configuration**. A settin
 | Morning news block | `news_block` | on | Turn news off for a while after the phone has been left alone overnight. |
 | Hours left alone | `news_gap_hours` | 6 | Hours untouched that count as a night's sleep (1 to 23). |
 | From hour, until hour | `news_from_hour`, `news_until_hour` | 6, 12 | The first unlock counts only from this hour and before that one (0 to 23). |
-| Minutes | `news_minutes` | 60 | How long news stays off (at most 240). |
+| Minutes | `news_minutes` | 150 | How long news stays off (at most 240). |
 | News sites | `news_sites` | the list above | Web addresses, separated by commas. Subdomains included. Write `none` for no sites. |
 | News apps | `news_apps` | the list above | Package names. Apps in Android's news category are paused too. |
 | Bank apps (banking mode) | `bank_apps` | Nubank (`com.nu.production`) | Package names. While one of these opens, Feed Guard and Watch Limit switch off for 10 minutes (see Banking mode). Write `none` to turn banking mode off. |
@@ -138,7 +138,7 @@ The signing key isn't in this repo, and must never be. Android lets anyone holdi
 | `UrlText.java`, `MarkerText.java` | Read the address and the marker |
 | `AppGate.java`, `AppRules.java`, `Pins.java` | Which apps to pause (browser rule, list rule, news rule, the basics), signature pins, and pausing through OwnDroid |
 | `ColorGuard.java`, `ColorRules.java` | Black and white, and when maps may show colour |
-| `NewsRules.java`, `NewsBlock.java` | Morning news block: its settings and site list, when an unlock is waking up, and counting its hour across restarts |
+| `NewsRules.java`, `NewsBlock.java` | Morning news block: its settings and site list, when an unlock is waking up, and counting its time across restarts |
 | `SecureSettings.java`, `ServiceList.java` | The only two settings the secure settings permission is used for: colour correction and the switched-on accessibility services |
 | `BankRules.java`, `BankMode.java` | Banking mode: which apps are bank apps, how long it lasts, and switching the guards off and back on in a safe order |
 | `BankActivity.java`, `BankReceiver.java` | The "Open bank app" icon, and the notification's "Turn back on now" |

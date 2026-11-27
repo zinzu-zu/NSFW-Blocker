@@ -25,7 +25,7 @@
     <string name="r_news_until_title">Morning news block: until hour</string>
     <string name="r_news_until_desc">... and before this hour, 0 to 23. Unset, it\'s 12 (noon).</string>
     <string name="r_news_minutes_title">Morning news block: minutes</string>
-    <string name="r_news_minutes_desc">How long news stays off, in minutes, at most 240. Unset, it\'s 60. Time the phone is switched off doesn\'t count.</string>
+    <string name="r_news_minutes_desc">How long news stays off, in minutes, at most 240. Unset, it\'s 150 (2.5 hours). Time the phone is switched off doesn\'t count.</string>
     <string name="r_news_sites_title">Morning news block: sites</string>
     <string name="r_news_sites_desc">Web addresses, separated by commas. Each covers its subdomains too, so globo.com covers g1.globo.com. Unset, it\'s Feed Guard\'s list of Brazilian and international news sites. Write none for no sites.</string>
     <string name="r_news_apps_title">Morning news block: apps</string>

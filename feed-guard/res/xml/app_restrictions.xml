@@ -68,7 +68,7 @@
         android:title="@string/r_news_minutes_title"
         android:description="@string/r_news_minutes_desc"
         android:restrictionType="integer"
-        android:defaultValue="60" />
+        android:defaultValue="150" />
     <restriction
         android:key="news_sites"
         android:title="@string/r_news_sites_title"
