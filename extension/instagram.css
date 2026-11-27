@@ -34,12 +34,18 @@ html.rnb-ig-nofeed video {
   #rnb-ig-cover input { background: #161716; color: #ececea; border-color: #444; }
   #rnb-ig-cover a { color: #7cc39c; }
 }
-#rnb-ig-cover .rnb-results { list-style: none; margin: 0; padding: 0; text-align: left; max-height: 40vh; overflow-y: auto; }
-#rnb-ig-cover .rnb-results:empty { display: none; }
-#rnb-ig-cover .rnb-results a { display: flex; flex-direction: column; padding: 6px 8px; border-radius: 8px; text-decoration: none; }
-#rnb-ig-cover .rnb-results a:hover { background: rgba(127,127,127,.12); }
-#rnb-ig-cover .rnb-results b { color: inherit; font-weight: 600; }
-#rnb-ig-cover .rnb-results small, #rnb-ig-cover .rnb-note { color: #6b6b66; font-size: 13px; }
+#rnb-ig-cover a.rnb-search {
+  margin-top: 6px; padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 600;
+  background: #2f6f4f; color: #fff;
+}
 @media (prefers-color-scheme: dark) {
-  #rnb-ig-cover .rnb-results small, #rnb-ig-cover .rnb-note { color: #9a9a94; }
+  #rnb-ig-cover a.rnb-search { background: #7cc39c; color: #111211; }
+}
+/* Instagram's search page (html.rnb-ig-search, set by instagram.js): the
+   Explore grid under the search box is hidden. Search results are links to
+   profiles, hashtags and places, so they stay. */
+html.rnb-ig-search main a[href*="/p/"],
+html.rnb-ig-search main a[href*="/reel/"],
+html.rnb-ig-search main video {
+  display: none !important;
 }
