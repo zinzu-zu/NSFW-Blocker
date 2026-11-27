@@ -80,5 +80,5 @@
         android:title="@string/r_news_apps_title"
         android:description="@string/r_news_apps_desc"
         android:restrictionType="string"
-        android:defaultValue="com.google.android.apps.magazines, com.globo.g1.app, com.cnn.mobile.android.phone, mnn.Android, bbc.mobile.news.ww, bbc.mobile.news.uk, com.nytimes.android, com.guardian, com.washingtonpost.rainbow, com.foxnews.android, com.zumobi.msnbc, com.bloomberg.android.plus, com.microsoft.amp.apps.bingnews" />
+        android:defaultValue="com.google.android.apps.magazines, com.globo.g1.app, com.cnn.mobile.android.phone, mnn.Android, bbc.mobile.news.ww, bbc.mobile.news.uk, com.nytimes.android, com.guardian, com.washingtonpost.rainbow, com.foxnews.android, com.zumobi.msnbc, com.bloomberg.android.plus, com.microsoft.amp.apps.bingnews, app.revanced.android.youtube, app.rvx.android.youtube, com.vanced.android.youtube" />
 </restrictions>

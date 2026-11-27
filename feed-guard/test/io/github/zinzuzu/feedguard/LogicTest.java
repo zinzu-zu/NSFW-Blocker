@@ -693,6 +693,7 @@ public final class LogicTest {
         eq("sites unset is the default", sites, NewsRules.listOrDefault(null, sites));
         eq("sites none", Collections.<String>emptySet(), NewsRules.listOrDefault("none", sites));
         eq("apps unset is the default", NewsRules.DEFAULT_APPS, NewsRules.appsOrDefault(null));
+        check("YouTube ReVanced is in the morning block", NewsRules.DEFAULT_APPS.contains("app.revanced.android.youtube"));
         eq("apps keep their case", set("mnn.Android"), NewsRules.appsOrDefault("mnn.Android"));
 
         // The gap: same start-up uses time since start-up; the clock can't fake it.

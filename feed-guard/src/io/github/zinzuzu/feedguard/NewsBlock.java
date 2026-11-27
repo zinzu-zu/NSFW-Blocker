@@ -87,7 +87,7 @@ final class NewsBlock {
         e.commit();
         if (start) {
             Guard.notify(c, N_NEWS, "Morning: news is off until " + time(c, endsAt(c)),
-                    "Good morning. News sites and news apps open again in " + cfg.newsMinutes + " minutes.",
+                    "Good morning. News sites, news apps and YouTube ReVanced open again in " + cfg.newsMinutes + " minutes.",
                     new Intent(c, MainActivity.class));
             WatchdogJob.newsEndCheck(c, timeLeft(c));
         }

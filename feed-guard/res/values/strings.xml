@@ -29,5 +29,5 @@
     <string name="r_news_sites_title">Morning news block: sites</string>
     <string name="r_news_sites_desc">Web addresses, separated by commas. Each covers its subdomains too, so globo.com covers g1.globo.com. Unset, it\'s Feed Guard\'s list of Brazilian and international news sites. Write none for no sites.</string>
     <string name="r_news_apps_title">Morning news block: apps</string>
-    <string name="r_news_apps_desc">Package names, separated by commas. Paused during the block, even if they\'re on your list. Apps that call themselves news apps are paused too. Unset, it\'s Feed Guard\'s list (Google News, g1, CNN, BBC News and others). Write none for only the apps that call themselves news apps.</string>
+    <string name="r_news_apps_desc">Package names, separated by commas. Paused during the block, even if they\'re on your list. Apps that call themselves news apps are paused too. Unset, it\'s Feed Guard\'s list (Google News, g1, CNN, BBC News and others, plus YouTube ReVanced). Write none for only the apps that call themselves news apps.</string>
 </resources>

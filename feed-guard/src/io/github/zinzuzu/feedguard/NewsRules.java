@@ -58,7 +58,7 @@ final class NewsRules {
             "msn.com");
 
     /**
-     * News apps, when news_apps isn't set. Apps that call themselves news apps
+     * News apps (and YouTube ReVanced), when news_apps isn't set. Apps that call themselves news apps
      * (Android's "news" app category) are paused too, whatever this list says.
      */
     static final Set<String> DEFAULT_APPS = AppRules.set(
@@ -74,7 +74,12 @@ final class NewsRules {
             "com.foxnews.android",
             "com.zumobi.msnbc",                  // NBC News
             "com.bloomberg.android.plus",
-            "com.microsoft.amp.apps.bingnews");  // Microsoft Start
+            "com.microsoft.amp.apps.bingnews",   // Microsoft Start
+            // Not news, but no better first hour either: YouTube ReVanced, and the
+            // forks with their own package names (ReVanced Extended, Vanced).
+            "app.revanced.android.youtube",
+            "app.rvx.android.youtube",
+            "com.vanced.android.youtube");
 
     /**
      * A managed-configuration list, or its default when it was never set.
