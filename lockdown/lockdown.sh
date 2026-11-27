@@ -2,10 +2,10 @@
 # Reddit NSFW Blocker lock-down for macOS.
 # Run from Terminal:  sudo bash lockdown.sh
 # Builds one configuration profile that force-installs the extension in
-# Firefox (and Edge, if published there), blocks Reddit in Safari and the
-# other Chromium browsers, and turns off extra profiles. Firefox keeps its
-# private windows, with the extension running in them; the other browsers
-# lose theirs. DNS settings are left alone.
+# Firefox (and Edge, if published there), blocks Reddit (and, if chosen,
+# Instagram and Facebook) in Safari and the other Chromium browsers, and turns
+# off extra profiles. Firefox keeps its private windows, with the extension
+# running in them; the other browsers lose theirs. DNS settings are left alone.
 # A system profile can only be removed with an administrator password.
 set -euo pipefail
 
@@ -43,7 +43,12 @@ read -r -p "Edge Add-ons extension ID (Enter to skip and block Reddit in Edge to
 read -r -p "Also block Instagram in Safari and the Chromium browsers (Chrome, Brave, and Edge unless it has the extension), so its feed can only be opened in Firefox? [Y/n]: " IG
 IG_ENTRY="<string>instagram.com</string>"
 [[ "$IG" =~ ^[Nn] ]] && IG_ENTRY=""
-BLOCK_REDDIT="<key>URLBlocklist</key><array><string>reddit.com</string><string>redd.it</string><string>redditmedia.com</string>$IG_ENTRY</array>"
+# Facebook's feed is hidden by the extension in Firefox. Blocking facebook.com
+# elsewhere leaves messenger.com open in every browser.
+read -r -p "Also block Facebook in Safari and the Chromium browsers, so its feed can only be opened in Firefox? Messenger.com stays open everywhere. [Y/n]: " FB
+FB_ENTRY="<string>facebook.com</string>"
+[[ "$FB" =~ ^[Nn] ]] && FB_ENTRY=""
+BLOCK_REDDIT="<key>URLBlocklist</key><array><string>reddit.com</string><string>redd.it</string><string>redditmedia.com</string>$IG_ENTRY$FB_ENTRY</array>"
 if [[ -n "$EDGE_ID" && ! "$EDGE_ID" =~ ^[a-p]{32}$ ]]; then
   echo "That doesn't look like an extension ID (32 letters a-p)."; exit 1
 fi
@@ -66,6 +71,7 @@ u() { uuidgen; }
 # version and the new ones are reported to block less reliably.
 SAFARI_DOMAINS="reddit.com redd.it redditmedia.com"
 [[ -n "$IG_ENTRY" ]] && SAFARI_DOMAINS="$SAFARI_DOMAINS instagram.com"
+[[ -n "$FB_ENTRY" ]] && SAFARI_DOMAINS="$SAFARI_DOMAINS facebook.com"
 RULES="$ROOT/extension/rules.json"
 if [[ -f "$RULES" ]]; then
   SAFARI_DOMAINS="$SAFARI_DOMAINS $(sed -n '/"requestDomains"/,/]/p' "$RULES" | grep -oE '"[a-z0-9.-]+\.[a-z0-9-]+"' | tr -d '"' | sort -u | tr '\n' ' ')"
@@ -80,6 +86,11 @@ safari_urls() {
   for sub in old new np i sh; do
     printf '<string>https://%s.reddit.com</string>' "$sub"
   done
+  if [[ -n "$FB_ENTRY" ]]; then
+    for sub in m web mbasic touch; do
+      printf '<string>https://%s.facebook.com</string>' "$sub"
+    done
+  fi
 }
 
 chromium_payload() { # domain, private-key, add-profile-key, extra

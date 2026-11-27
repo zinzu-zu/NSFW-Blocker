@@ -7,6 +7,7 @@ A browser extension for Firefox (Mac and Android) and Edge that keeps adult cont
 - **Adult-only subreddits and profiles.** Any `r/...` or `u/...` page that Reddit marks as over-18 (checked through Reddit's own `about.json`) is replaced with a "blocked" page. Typing the address, following a link, and new Reddit's in-page navigation are all caught. Multireddits (`r/a+b`) are checked one by one.
 - **The home feed.** On the front page (and `/best`, `/hot`, `/new`, `/top`), as well as on `r/popular` and `r/all`, the posts are hidden. In their place is a small box with a Reddit search field. Everything else still works as normal: subreddits, posts, comments, search and profiles. To allow `r/popular` and `r/all` again, set `HIDE_POPULAR_AND_ALL = false` in `content.js`.
 - **Instagram's feeds.** The home feed, Explore and the Reels tab are hidden. In their place is a box where you can type a username or open your messages. Profiles, messages, stories, search, and single posts or reels opened from a message all still work. The Instagram app isn't covered, only instagram.com in Firefox. On Android, Feed Guard pauses the app instead.
+- **Facebook's feeds.** The news feed (`/` and `/home.php`), Watch, the Reels tab and the groups feed are hidden. In their place is a box with a search field and links to your messages, your groups, notifications and your profile. Messages, single groups, profiles, pages, Marketplace, notifications, search, and single posts, videos and reels all still work. This is for facebook.com in Firefox on the Mac; the Android setup doesn't cover Facebook. Messenger.com isn't touched.
 - **NSFW posts everywhere else, including search**, on new Reddit and old Reddit. Posts carrying Reddit's NSFW flag are hidden. Posts from an adult-only subreddit are also hidden even when nobody tagged the post.
 - **Reddit's "are you over 18?" gate** (`/over18`) and `r/randnsfw`.
 - **Adult media hosts** (redgifs, erome, pornhub, onlyfans and about 25 others in `extension/rules.json`). These are blocked everywhere in the browser, not just on Reddit: pages redirect to the blocked page, and embedded images and videos don't load.
@@ -24,7 +25,7 @@ The lock is one macOS configuration profile, installed at the system level, so o
 
 1. **Firefox force-installs the extension.** Firefox installs it by itself, the Remove and Disable buttons go away, and it applies to every profile. Policies are keyed by app, so a second copy of Firefox in your Downloads folder gets them too.
 2. **Chrome, Brave and Chromium block Reddit completely.** On a Mac without device management, those browsers only force-install extensions from the Chrome Web Store, which charges $5. Blocking Reddit in them is free and leaves no way around the filter, since Reddit then only opens in Firefox. Edge works the same way, unless you publish the extension to Microsoft's free Edge Add-ons store. In that case Edge force-installs it like Firefox does.
-3. **Safari blocks Reddit completely.** Safari can't be made to keep an extension switched on, so it gets the same treatment as Chrome: Reddit (and Instagram, if you chose that) won't open there. It uses Apple's own web filter, the one behind Screen Time, which also blocks adult sites it recognises and the adult media hosts in `extension/rules.json`. That filter turns off Safari's private windows, and it isn't on a passcode you could reset with your Apple Account: removing it needs the admin password.
+3. **Safari blocks Reddit completely.** Safari can't be made to keep an extension switched on, so it gets the same treatment as Chrome: Reddit (and Instagram and Facebook, if you chose them) won't open there. The same choices apply to Chrome, Brave, Chromium and Edge. Messenger.com stays open everywhere. It uses Apple's own web filter, the one behind Screen Time, which also blocks adult sites it recognises and the adult media hosts in `extension/rules.json`. That filter turns off Safari's private windows, and it isn't on a passcode you could reset with your Apple Account: removing it needs the admin password.
 4. **Firefox keeps private windows; nothing else does.** The extension runs inside Firefox's private windows too, so they're filtered the same way. In Chrome, Brave, Chromium and Edge, private windows, Guest mode, new profiles and Brave's Tor windows are turned off. In Firefox, Troubleshoot Mode, `about:profiles` and `about:config` are blocked, because each of those can start Firefox without the extension.
 5. **Your everyday account becomes a Standard account, and a friend holds the admin password.** Removing the profile needs that password, so this is what makes it stick.
 
@@ -80,6 +81,17 @@ If you installed the lock before Safari was part of it, you install the profile 
 4. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
 5. Quit Safari and Firefox with Cmd+Q, open them again, and do the checks in step 4 of the setup.
 6. If you'd set Limit Adult Websites in Screen Time before, you can leave it; the profile does the same job and can't be reset with your Apple Account.
+
+## Adding Facebook to a Mac that's already locked
+
+Version 1.3.0 hides Facebook's feed in Firefox. To also block facebook.com in Safari and Chrome, so the feed can't be opened there instead, the profile is installed again. Your friend types the admin password twice.
+
+1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/reddit-nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
+2. Replace `extension/`, `lockdown/lockdown.sh`, `extension-upload.zip` and `README.md` in the blocker's folder with the new ones.
+3. Sign 1.3.0 and install it as in "Updating a locked Mac" below.
+4. Your friend runs `sudo bash lockdown.sh` in the `lockdown` folder and gives the same answers as last time. The new question about Facebook means yes when you press Enter.
+5. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
+6. Quit Safari, Chrome and Firefox with Cmd+Q and open them again. In Firefox, facebook.com should show "The feed is turned off", and facebook.com/messages should open. In Safari, facebook.com should show "You cannot browse this page".
 
 ## Updating a locked Mac
 
