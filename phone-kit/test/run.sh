@@ -865,6 +865,22 @@ check "no adb, no download: says how to get it" said "brew install android-platf
 check "no adb, no download: exit 1" rc_is 1
 check "no adb, no download: the phone untouched" not has owner
 
+# Moved into a subfolder, with the settings next to it.
+fresh 36
+mkdir -p "$COPY/Important Files"
+cp "$CLICK" "$COPY/Important Files/"
+printf '%s\n' "$BASE_CONF" > "$COPY/Important Files/my-phone.conf"
+( unset PHONE_KIT_CONF
+  printf "$Y40" | $TIMEOUT "$COPY/Important Files/Set up a phone.command" > "$OUT" 2>&1 )
+RC=$?
+check "click from a subfolder: finds the kit above it" said "The phone is set up."
+check "click from a subfolder: exit 0" rc_is 0
+mkdir -p "$WORK/elsewhere"
+cp "$CLICK" "$WORK/elsewhere/"
+printf '\n' | $TIMEOUT "$WORK/elsewhere/Set up a phone.command" > "$OUT" 2>&1
+check "click with no kit near it: says where to put it" said "phone-kit isn't next to this file or in the folder above it."
+rm -rf "$COPY/Important Files" "$WORK/elsewhere"
+
 echo
 echo "$passed passed, $failed failed"
 [ "$failed" -eq 0 ]

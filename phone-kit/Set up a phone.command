@@ -10,7 +10,21 @@
 
 cd "$(dirname "$0")" || exit 1
 HERE=$(pwd)
-CONF=${PHONE_KIT_CONF:-$HERE/my-phone.conf}
+# The kit is next to this file, or one folder up if this file was moved into
+# a subfolder. my-phone.conf is used from either place, this folder first.
+KIT=$HERE
+[ -x "$KIT/phone-kit" ] || [ ! -x "$HERE/../phone-kit" ] || KIT=$(cd "$HERE/.." && pwd)
+if [ ! -x "$KIT/phone-kit" ]; then
+  printf '%s\n' "phone-kit isn't next to this file or in the folder above it." \
+    "Put \"Set up a phone.command\" back in the phone-kit folder, or in a folder inside it."
+  printf 'Press Enter to close this window. '; read -r _; exit 1
+fi
+CONF=${PHONE_KIT_CONF:-}
+if [ -z "$CONF" ]; then
+  CONF=$HERE/my-phone.conf
+  [ -f "$CONF" ] || [ ! -f "$KIT/my-phone.conf" ] || CONF=$KIT/my-phone.conf
+fi
+export PHONE_KIT_CONF=$CONF
 PLATFORM_TOOLS=https://dl.google.com/android/repository/platform-tools-latest-darwin.zip
 umask 077
 export PHONE_KIT_AGAIN="press Enter in this window"
@@ -28,7 +42,7 @@ say ""
 adb=${PHONE_KIT_ADB:-}
 if [ -z "$adb" ]; then
   for a in "$(command -v adb 2>/dev/null)" ${PHONE_KIT_ADB_PLACES-/opt/homebrew/bin/adb /usr/local/bin/adb} \
-      "$HERE/platform-tools/adb"; do
+      "$KIT/platform-tools/adb"; do
     if [ -n "$a" ] && [ -x "$a" ]; then adb=$a; break; fi
   done
 fi
@@ -43,10 +57,10 @@ if [ -z "$adb" ]; then
   esac
   tmp=$(mktemp -d) || bye 1
   if curl -fL --progress-bar -o "$tmp/platform-tools.zip" "$PLATFORM_TOOLS" \
-      && unzip -q -o "$tmp/platform-tools.zip" -d "$HERE" && [ -x "$HERE/platform-tools/adb" ]; then
+      && unzip -q -o "$tmp/platform-tools.zip" -d "$KIT" && [ -x "$KIT/platform-tools/adb" ]; then
     rm -rf "$tmp"
-    adb=$HERE/platform-tools/adb
-    say "Got it, in $HERE/platform-tools."
+    adb=$KIT/platform-tools/adb
+    say "Got it, in $KIT/platform-tools."
     say ""
   else
     rm -rf "$tmp"
@@ -57,7 +71,7 @@ fi
 export PHONE_KIT_ADB=$adb
 
 if [ ! -f "$CONF" ]; then
-  cp "$HERE/my-phone.conf.example" "$CONF" || bye 1
+  cp "$KIT/my-phone.conf.example" "$CONF" || bye 1
   say "Your settings go in my-phone.conf, which opens in TextEdit now. Put in your"
   say "NextDNS address and your apps, and save it (Cmd-S)."
   open -e "$CONF"
@@ -66,7 +80,7 @@ fi
 
 while :; do
   say ""
-  if "$HERE/phone-kit" setup; then break; fi
+  if "$KIT/phone-kit" setup; then break; fi
   say ""
   say "Enter goes on. To change your settings first, type s and press Enter."
   ask "To stop, close this window." || exit 1
