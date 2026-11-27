@@ -22,7 +22,7 @@ There's no image to flash instead. Android's backups and images never carry a de
 | 10 | OwnDroid's restrictions, the hidden apps, and **Block uninstall** and **Disable user control** for Feed Guard, Watch Limit and Firefox | the kit, through OwnDroid's API |
 | 11 | OwnDroid's API and Shortcuts off | you. The kit checks that neither answers any more |
 | 12 | A check of all of the above, in Android's own reports | the kit |
-| 13 | In Firefox: the NextDNS test page, the add-on, then instagram.com so Feed Guard starts guarding | you |
+| 13 | In Firefox: the NextDNS test page, the add-on, then instagram.com so Feed Guard starts guarding. With a signed `.xpi` (see below) the kit copies the newest one to the phone's Downloads | you |
 | 14 | **Debug features** on, the last switch: it ends USB debugging for good | you. The kit waits for the phone to go |
 | 15 | A new OwnDroid code from owndroid-key, on your usual dates | owndroid-key |
 
@@ -35,9 +35,12 @@ If it stops, because the cable came out, you pressed Ctrl-C or a check didn't pa
 1. adb: `brew install android-platform-tools`. Or skip it: **Set up a phone.command** offers to download Android's platform tools from Google into this folder.
 2. owndroid-key, installed as [its README](../owndroid-key/README.md) says. If it was installed before `seal --new-phone` existed, an administrator runs `sudo bash install.sh` in the new owndroid-key folder once, which keeps the sealed key.
 3. This folder, next to owndroid-key in /Users/Shared. Its `apks` folder holds the apps:
-   - `FeedGuard-0.4.3.apk` and `WatchLimit-1.0.apk` come with the kit.
+   - `FeedGuard-0.4.4.apk` and `WatchLimit-1.0.apk` come with the kit. Put newer builds next to them: the kit installs the highest version of each (by the number in the file name), so older copies can stay.
    - OwnDroid: on the first run the kit downloads the regular OwnDroid v8.4 APK (never the testkey one) from its GitHub release. It keeps the APK and its fingerprint in `apks/OwnDroid.apk.sha256`, so every phone gets the same copy. You can also download it yourself and put it in `apks`.
    - `apks/extra`: any other APK, such as Firefox or your own apps. Each one is installed once on every phone.
+   - The add-on: signed `.xpi` files in `apks`, or in the folder `ADDON_FILE` names. The kit reads the version inside each one and copies the newest signed one to the phone.
+
+**Updating a phone that's already set up:** in OwnDroid › User restrictions, switch off Debug features, turn on USB debugging, and run setup again. It installs any newer Feed Guard or Watch Limit, puts a newer add-on in the phone's Downloads, re-imports the settings, and ends with Debug features again.
 4. Your settings: the first run makes `my-phone.conf` from `my-phone.conf.example`. Put in your NextDNS address and your apps. **Set up a phone.command** opens it in TextEdit for you.
 
 ## A new or reset phone
@@ -73,7 +76,8 @@ That's once per download. To stop, close the window: the next double-click goes 
 | `HIDE_APPS` | Chrome, Firefox Focus, NextDNS | Apps OwnDroid hides. Apps that aren't on the phone are skipped |
 | `PROTECT_APPS` | empty | More apps that can't be uninstalled, stopped or have their data cleared |
 | `LOCK_DEFAULT_APPS` | as `ONLY_LISTED_APPS` | Locks the default apps on Android 14 and newer. Android never pauses the default home screen or phone app, so a new default would get past the list |
-| `ADDON_PAGE` | empty | The add-on's page on addons.mozilla.org, for the kit to open in Firefox |
+| `ADDON_PAGE` | empty | The add-on's page on addons.mozilla.org, for the kit to open in Firefox when there's no signed `.xpi` |
+| `ADDON_FILE` | empty | A signed `.xpi`, or a folder of them. The newest signed version goes on the phone, and again whenever a newer one turns up |
 | `USE_OWNDROID_API` | `yes` | `no` makes step 10 taps: the kit lists each switch and checks it |
 
 Feed Guard gets the list, black and white, colour apps and extra apps through its managed configuration, as in [its README](../feed-guard/README.md). In list mode, install the apps you want to keep before step 8. An app installed later is paused until it's on the list.

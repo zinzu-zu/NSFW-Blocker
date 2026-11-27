@@ -270,8 +270,18 @@ kit "" setup
 check "no Feed Guard APK: says which one" said "Feed Guard's APK (FeedGuard-0.2.0.apk or newer) isn't in"
 fresh
 apk FeedGuard-0.1.1.apk "$FG" 0.1.1 1
-kit "" setup
-check "two Feed Guard APKs: refused" said "more than one Feed Guard APK"
+apk FeedGuard-0.10.0.apk "$FG" 0.10.0 12 "requests=android.permission.WRITE_SECURE_SETTINGS android.permission.POST_NOTIFICATIONS"
+apk WatchLimit-1.2.apk "$WL" 1.2 3
+setup
+check "several Feed Guard APKs: the newest is used" said "Using FeedGuard-0.10.0.apk, the newest of the 3 Feed Guard APKs"
+check "and goes on the phone" is "$(f "pkg/$FG/version")" 0.10.0
+check "several Watch Limit APKs: the newest too" is "$(f "pkg/$WL/version")" 1.2
+check "and setup finishes" rc_is 0
+new_phone 36
+put settings/secure/android_id 88bb88bb88bb88bb
+make_app "$FG" 0 0.4.4 9 android.permission.WRITE_SECURE_SETTINGS android.permission.POST_NOTIFICATIONS
+setup
+check "a phone with an older Feed Guard gets the newest" is "$(f "pkg/$FG/version")" 0.10.0
 fresh
 apk OwnDroid-v8.4-testkey.apk com.bintianqi.owndroid 8.4 40
 kit "" setup
@@ -295,6 +305,78 @@ fresh
 rm -f "$PHONE_KIT_APKS"/OwnDroid*
 FAKE_OFFLINE=1 kit "" setup
 check "can't download: says where to get it" said "Get the regular OwnDroid v8.4 APK (not the testkey one)"
+
+echo "--- The add-on ---"
+
+xpi() {  # file, version, signed (yes/no), add-on id
+  mkdir -p "$(dirname "$1")"
+  python3 - "$1" "$2" "$3" "${4:-reddit-nsfw-blocker@self-hosted}" <<'PY'
+import sys, zipfile
+f, v, signed, i = sys.argv[1:]
+z = zipfile.ZipFile(f, "w")
+z.writestr("manifest.json", '{\n  "manifest_version": 2,\n  "name": "NSFW Blocker",\n  "version": "%s",\n'
+           '  "browser_specific_settings": { "gecko": { "id": "%s" } }\n}\n' % (v, i))
+if signed == "yes":
+    z.writestr("META-INF/mozilla.rsa", "sig")
+    z.writestr("META-INF/cose.sig", "sig")
+z.close()
+PY
+}
+ADDONS="$WORK/My Add-ons"
+pushed_xpi() { test -f "$P/fs/sdcard/Download/nsfw-blocker-$1.xpi"; }
+no_xpi_pushed() { ! ls "$P/fs/sdcard/Download/"*.xpi >/dev/null 2>&1; }
+
+fresh 36
+rm -rf "$ADDONS"
+xpi "$ADDONS/reddit-nsfw-blocker.xpi" 1.1.1 yes
+xpi "$ADDONS/NSFW Blocker-1.4.1.xpi" 1.4.1 yes
+xpi "$ADDONS/NSFW Blocker-1.4.2.xpi" 1.4.2 no
+xpi "$ADDONS/other.xpi" 9.0 yes someone-else@example.com
+conf "$BASE_CONF" "ADDON_FILE=$ADDONS"
+setup
+check "add-on: the newest signed copy goes to the phone" pushed_xpi 1.4.1
+check "add-on: not the old one" not pushed_xpi 1.1.1
+check "add-on: an unsigned newer one is named" said "version 1.4.2 isn't signed by Mozilla yet"
+check "add-on: another add-on's file is left out" not pushed_xpi 9.0
+check "add-on: says how to install it from the file" said "Install add-on from file, and pick nsfw-blocker-1.4.1.xpi"
+check "add-on: the pauses, with the file instead of the page" \
+  taps_were "firefox apps api-field api-apply delegations import import-check watch-limit api-off nextdns addon-file instagram debug key "
+check "add-on: setup finishes" rc_is 0
+put settings/global/adb_enabled 1
+rm -f "$P/restr-global.new"; del restr-global no_debugging_features
+rm -f "$P/fs/sdcard/Download/nsfw-blocker-1.4.1.xpi" "$P/taps.log"
+setup
+check "add-on: the same version isn't asked for again" not pushed_xpi 1.4.1
+check "add-on: and said" said "The add-on 1.4.1 went on this phone before."
+check "add-on: nothing asked on the second run but Debug features" taps_were "debug key "
+xpi "$ADDONS/NSFW Blocker-1.4.2.xpi" 1.4.2 yes
+put settings/global/adb_enabled 1
+rm -f "$P/restr-global.new"; del restr-global no_debugging_features
+rm -f "$P/taps.log"
+setup
+check "add-on: a newer signed version goes on" pushed_xpi 1.4.2
+check "add-on: only the add-on is asked for" taps_were "addon-file debug key "
+check "add-on: no word about unsigned now" not_said "isn't signed by Mozilla yet"
+
+fresh 36
+rm -rf "$ADDONS"
+xpi "$PHONE_KIT_APKS/nsfw.xpi" 1.3.0 yes
+setup
+check "add-on: an .xpi in apks counts too" pushed_xpi 1.3.0
+fresh 36
+xpi "$ADDONS/one.xpi" 1.4.1 yes
+conf "$BASE_CONF" "ADDON_FILE=$ADDONS/one.xpi"
+setup
+check "add-on: ADDON_FILE can be the file itself" pushed_xpi 1.4.1
+fresh 36
+conf "$BASE_CONF" "ADDON_FILE=$WORK/nowhere"
+kit "" setup
+check "add-on: an ADDON_FILE that isn't there is refused" said "ADDON_FILE is $WORK/nowhere, and there's nothing there."
+check "add-on: before touching the phone" not_said "1/15"
+fresh 36
+setup
+check "add-on: no .xpi anywhere: the page, as before" tapped addon
+check "add-on: and nothing pushed" no_xpi_pushed
 
 echo "--- A whole setup, through OwnDroid's API (Android 16) ---"
 
