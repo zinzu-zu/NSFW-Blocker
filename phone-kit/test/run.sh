@@ -175,6 +175,12 @@ check "the phone wasn't touched by any of that" test ! -e "$P/shell.log"
 conf "NEXTDNS_HOST=my1234.dns.nextdns.io" "COLOUR=yes"
 kit "" setup
 check "unknown setting: named, with its line" said "my-phone.conf, line 2: there's no setting called COLOUR"
+conf "NEXTDNS_HOST=my1234.dns.nextdns.io" "NEWS_SITES=globo.com, not a site"
+kit "" setup
+check "a news site that isn't an address: refused" said 'NEWS_SITES has "not"'
+conf "NEXTDNS_HOST=my1234.dns.nextdns.io" "BANK_APPS=Nubank"
+kit "" setup
+check "a bank app name instead of a package: refused" said 'BANK_APPS has "Nubank"'
 conf "NEXTDNS_HOST=my1234.dns.nextdns.io" "just words"
 kit "" setup
 check "a line without =: refused" said "line 2: expected NAME=value"
@@ -582,6 +588,20 @@ check "COLOR_APPS=none goes in as none" config_has '{"id":"color_apps","v_str":"
 check "the extra apps to pause" config_has '{"id":"blocked_apps","v_str":"com.example.game, com.example.chat"}'
 check "the screen got its colour back" is "$(setting secure accessibility_display_daltonizer_enabled)" 0
 check "done (5)" rc_is 0
+
+fresh 36
+printf '%s\nNEWS_SITES=Globo.com, https://www.cnn.com/, uol.com.br\nNEWS_APPS=none\nBANK_APPS=com.nu.production, com.revolut.revolut\n' "$BASE_CONF" > "$PHONE_KIT_CONF"
+setup
+check "news sites go in, cleaned up" config_has '{"id":"news_sites","v_str":"globo.com, www.cnn.com, uol.com.br"}'
+check "NEWS_APPS=none goes in as none" config_has '{"id":"news_apps","v_str":"none"}'
+check "bank apps go in" config_has '{"id":"bank_apps","v_str":"com.nu.production, com.revolut.revolut"}'
+check "done (5b)" rc_is 0
+
+fresh 36
+printf '%s\n' "$BASE_CONF" > "$PHONE_KIT_CONF"
+setup
+check "news and bank lists unset: left to Feed Guard" not config_has news_sites
+check "bank apps unset: left out" not config_has bank_apps
 
 fresh 36
 printf '%s\nBLACK_AND_WHITE=no\n' "$BASE_CONF" > "$PHONE_KIT_CONF"

@@ -147,6 +147,7 @@ sha256_of() {
 C_NEXTDNS_HOST="" C_APP_LIST="" C_ONLY_LISTED_APPS=no C_BLACK_AND_WHITE=yes
 C_COLOR_APPS="" C_BLOCK_APPS="" C_HIDE_APPS="" C_PROTECT_APPS=""
 C_LOCK_DEFAULT_APPS="" C_ADDON_PAGE="" C_USE_OWNDROID_API=yes
+C_BANK_APPS="" C_NEWS_SITES="" C_NEWS_APPS=""
 PKG_RE='^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$'
 HOST_RE='^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$'
 
@@ -190,7 +191,7 @@ load_conf() {
     val=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//')
     case "$val" in \"*\") val=${val#\"}; val=${val%\"} ;; \'*\') val=${val#\'}; val=${val%\'} ;; esac
     case "$key" in
-      NEXTDNS_HOST|APP_LIST|ONLY_LISTED_APPS|BLACK_AND_WHITE|COLOR_APPS|BLOCK_APPS|HIDE_APPS|PROTECT_APPS|LOCK_DEFAULT_APPS|ADDON_PAGE|USE_OWNDROID_API)
+      NEXTDNS_HOST|APP_LIST|ONLY_LISTED_APPS|BLACK_AND_WHITE|COLOR_APPS|BLOCK_APPS|HIDE_APPS|PROTECT_APPS|LOCK_DEFAULT_APPS|ADDON_PAGE|USE_OWNDROID_API|BANK_APPS|NEWS_SITES|NEWS_APPS)
         printf -v "C_$key" '%s' "$val" ;;
       *) conf_error $n "there's no setting called $key" ;;
     esac
@@ -204,11 +205,23 @@ load_conf() {
   C_HIDE_APPS=$(norm_list "$C_HIDE_APPS")
   C_PROTECT_APPS=$(norm_list "$C_PROTECT_APPS")
   C_COLOR_APPS=$(norm_list "$C_COLOR_APPS")
+  C_BANK_APPS=$(norm_list "$C_BANK_APPS")
+  C_NEWS_SITES=$(norm_list "$C_NEWS_SITES" | tr 'A-Z' 'a-z')
+  C_NEWS_APPS=$(norm_list "$C_NEWS_APPS")
   check_list APP_LIST "$C_APP_LIST"
   check_list BLOCK_APPS "$C_BLOCK_APPS"
   check_list HIDE_APPS "$C_HIDE_APPS"
   check_list PROTECT_APPS "$C_PROTECT_APPS"
   [ "$C_COLOR_APPS" = none ] || check_list COLOR_APPS "$C_COLOR_APPS"
+  [ "$C_BANK_APPS" = none ] || check_list BANK_APPS "$C_BANK_APPS"
+  [ "$C_NEWS_APPS" = none ] || check_list NEWS_APPS "$C_NEWS_APPS"
+  if [ "$C_NEWS_SITES" != none ]; then
+    for p in $C_NEWS_SITES; do
+      p=${p#http://}; p=${p#https://}; p=${p%/}
+      [[ $p =~ $HOST_RE ]] || die "my-phone.conf: NEWS_SITES has \"$p\", which isn't a web address like globo.com."
+    done
+    C_NEWS_SITES=$(printf '%s' "$C_NEWS_SITES" | tr ' ' '\n' | sed 's|^https\{0,1\}://||; s|/$||' | paste -s -d' ' -)
+  fi
   C_ONLY_LISTED_APPS=$(yes_or_no ONLY_LISTED_APPS "$C_ONLY_LISTED_APPS") || exit 1
   C_BLACK_AND_WHITE=$(yes_or_no BLACK_AND_WHITE "$C_BLACK_AND_WHITE") || exit 1
   # Unset, the default apps get locked along with "Only apps on the list", as
@@ -584,6 +597,10 @@ feed_guard_json() {
   else printf ',{"id":"grayscale","v_bool":false}'; fi
   [ -z "$C_COLOR_APPS" ] || printf ',{"id":"color_apps","v_str":"%s"}' "$(json_list "$C_COLOR_APPS")"
   [ -z "$C_BLOCK_APPS" ] || printf ',{"id":"blocked_apps","v_str":"%s"}' "$(json_list "$C_BLOCK_APPS")"
+  # Empty: left out, so Feed Guard uses its own lists. none: none at all.
+  [ -z "$C_BANK_APPS" ] || printf ',{"id":"bank_apps","v_str":"%s"}' "$(json_list "$C_BANK_APPS")"
+  [ -z "$C_NEWS_SITES" ] || printf ',{"id":"news_sites","v_str":"%s"}' "$(json_list "$C_NEWS_SITES")"
+  [ -z "$C_NEWS_APPS" ] || printf ',{"id":"news_apps","v_str":"%s"}' "$(json_list "$C_NEWS_APPS")"
   printf ']\n'
 }
 
