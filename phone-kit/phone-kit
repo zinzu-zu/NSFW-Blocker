@@ -1193,7 +1193,17 @@ audit() {
     else mark_bad "The screen isn't black and white"; fi
   fi
   n=""
-  for p in $C_APP_LIST; do installed "$p" && suspended "$p" && n="$n $p"; done
+  local timed=""
+  for p in $C_APP_LIST; do
+    installed "$p" && suspended "$p" || continue
+    # Watch Limit pauses YouTube apps once the day's time is used up, and
+    # Feed Guard pauses news apps during the morning block: both on purpose.
+    case " $(echo $YOUTUBE_APPS) $C_NEWS_APPS " in
+      *" $p "*) timed="$timed $p" ;;
+      *) n="$n $p" ;;
+    esac
+  done
+  [ -z "$timed" ] || mark_ok "Paused for now by Watch Limit or the morning news block, as they should be:$timed"
   if [ -n "$n" ]; then mark_bad "These apps from your list are paused:$n"
   elif [ -n "$C_APP_LIST" ]; then mark_ok "Nothing on your list is paused"; fi
   if [ "$C_ONLY_LISTED_APPS" = yes ]; then
