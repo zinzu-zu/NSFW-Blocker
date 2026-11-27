@@ -565,6 +565,15 @@ setup
 check "the browser role refused: asks for the tap" tapped browser
 check "and goes on once it's done" rc_is 0
 
+fresh 36
+make_app app.revanced.android.youtube 0 19.0 1 launcher
+touch "$P/pkg/app.revanced.android.youtube/suspended"
+make_app com.example.notes 0 1.0 1 launcher
+conf "$BASE_CONF" "APP_LIST=com.whatsapp, app.revanced.android.youtube"
+setup
+check "a YouTube app paused by Watch Limit: fine" said "Paused for now by Watch Limit or the morning news block, as they should be: app.revanced.android.youtube"
+check "and setup finishes" rc_is 0
+
 echo "--- OwnDroid's API and Shortcuts ---"
 
 fresh 36
