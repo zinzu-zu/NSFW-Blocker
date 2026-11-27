@@ -131,6 +131,7 @@ cat > "$OUT" <<EOF2
       <key>DisableSafeMode</key><true/>
       <key>BlockAboutProfiles</key><true/>
       <key>BlockAboutConfig</key><true/>
+      <key>DisableDeveloperTools</key><true/>
     </dict>
     <dict>
       <key>PayloadType</key><string>com.apple.familycontrols.contentfilter</string>
