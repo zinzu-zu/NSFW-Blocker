@@ -2,8 +2,8 @@
 # Reddit NSFW Blocker lock-down for macOS.
 # Run from Terminal:  sudo bash lockdown.sh
 # Builds one configuration profile that force-installs the extension in
-# Firefox (and Edge, if published there), blocks Reddit (and, if chosen,
-# Instagram and Facebook) in Safari and the other Chromium browsers, and turns
+# Firefox (and Edge, if published there), blocks Reddit, Instagram and
+# Facebook in Safari and the other Chromium browsers, and turns
 # off extra profiles. Firefox keeps its private windows, with the extension
 # running in them; the other browsers lose theirs. DNS settings are left alone.
 # A system profile can only be removed with an administrator password.
@@ -40,15 +40,10 @@ fi
 # Web Store on a Mac that isn't MDM-managed, so they get Reddit blocked outright
 # instead. Edge can force-install from Microsoft's free Edge Add-ons store.
 read -r -p "Edge Add-ons extension ID (Enter to skip and block Reddit in Edge too): " EDGE_ID
-read -r -p "Also block Instagram in Safari and the Chromium browsers (Chrome, Brave, and Edge unless it has the extension), so its feed can only be opened in Firefox? [Y/n]: " IG
-IG_ENTRY="<string>instagram.com</string>"
-[[ "$IG" =~ ^[Nn] ]] && IG_ENTRY=""
-# Facebook's feed is hidden by the extension in Firefox. Blocking facebook.com
-# elsewhere leaves messenger.com open in every browser.
-read -r -p "Also block Facebook in Safari and the Chromium browsers, so its feed can only be opened in Firefox? Messenger.com stays open everywhere. [Y/n]: " FB
-FB_ENTRY="<string>facebook.com</string>"
-[[ "$FB" =~ ^[Nn] ]] && FB_ENTRY=""
-BLOCK_REDDIT="<key>URLBlocklist</key><array><string>reddit.com</string><string>redd.it</string><string>redditmedia.com</string>$IG_ENTRY$FB_ENTRY</array>"
+# Instagram and Facebook are always blocked there too (owner's choice,
+# 2026-11-27), so their feeds only open in Firefox, where the extension hides
+# them. messenger.com stays open in every browser.
+BLOCK_REDDIT="<key>URLBlocklist</key><array><string>reddit.com</string><string>redd.it</string><string>redditmedia.com</string><string>instagram.com</string><string>facebook.com</string></array>"
 if [[ -n "$EDGE_ID" && ! "$EDGE_ID" =~ ^[a-p]{32}$ ]]; then
   echo "That doesn't look like an extension ID (32 letters a-p)."; exit 1
 fi
@@ -69,9 +64,7 @@ u() { uuidgen; }
 # The old key names (filterBlacklist, whitelistEnabled) are used on purpose:
 # Apple renamed them in macOS 15.2, but the old ones still work on every
 # version and the new ones are reported to block less reliably.
-SAFARI_DOMAINS="reddit.com redd.it redditmedia.com"
-[[ -n "$IG_ENTRY" ]] && SAFARI_DOMAINS="$SAFARI_DOMAINS instagram.com"
-[[ -n "$FB_ENTRY" ]] && SAFARI_DOMAINS="$SAFARI_DOMAINS facebook.com"
+SAFARI_DOMAINS="reddit.com redd.it redditmedia.com instagram.com facebook.com"
 RULES="$ROOT/extension/rules.json"
 if [[ -f "$RULES" ]]; then
   SAFARI_DOMAINS="$SAFARI_DOMAINS $(sed -n '/"requestDomains"/,/]/p' "$RULES" | grep -oE '"[a-z0-9.-]+\.[a-z0-9-]+"' | tr -d '"' | sort -u | tr '\n' ' ')"
@@ -86,11 +79,9 @@ safari_urls() {
   for sub in old new np i sh; do
     printf '<string>https://%s.reddit.com</string>' "$sub"
   done
-  if [[ -n "$FB_ENTRY" ]]; then
-    for sub in m web mbasic touch; do
-      printf '<string>https://%s.facebook.com</string>' "$sub"
-    done
-  fi
+  for sub in m web mbasic touch; do
+    printf '<string>https://%s.facebook.com</string>' "$sub"
+  done
 }
 
 chromium_payload() { # domain, private-key, add-profile-key, extra
@@ -140,6 +131,7 @@ cat > "$OUT" <<EOF2
       <key>DisableSafeMode</key><true/>
       <key>BlockAboutProfiles</key><true/>
       <key>BlockAboutConfig</key><true/>
+      <key>DisableDeveloperTools</key><true/>
     </dict>
     <dict>
       <key>PayloadType</key><string>com.apple.familycontrols.contentfilter</string>

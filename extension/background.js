@@ -144,6 +144,20 @@ try {
   chrome.tabs.onUpdated.addListener(onTabUpdated); // Chromium has no filter
 }
 
+// ---- feed pass -------------------------------------------------------------
+// Ten minutes of the Instagram and Facebook feeds, once every 14 days, started
+// from the feed panel (feed-pass.js draws it). Only this function writes the
+// start time, so a page can't start a second pass early.
+const PASS_EVERY = 14 * DAY;
+async function startFeedPass() {
+  const { feedPass } = await chrome.storage.local.get('feedPass');
+  const last = (feedPass && feedPass.startedAt) || 0;
+  const now = Date.now();
+  if (last && (now < last || now - last < PASS_EVERY)) return { startedAt: last, refused: true };
+  await chrome.storage.local.set({ feedPass: { startedAt: now } });
+  return { startedAt: now };
+}
+
 // Content scripts ask about the current page and about subreddits in feeds.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === 'checkPage') {
@@ -153,6 +167,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       sendResponse(v);
     });
+    return true;
+  }
+  if (msg && msg.type === 'feedPassStart') {
+    startFeedPass().then(sendResponse);
     return true;
   }
   if (msg && msg.type === 'lookup') {

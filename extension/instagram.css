@@ -34,3 +34,12 @@ html.rnb-ig-nofeed video {
   #rnb-ig-cover input { background: #161716; color: #ececea; border-color: #444; }
   #rnb-ig-cover a { color: #7cc39c; }
 }
+#rnb-ig-cover .rnb-results { list-style: none; margin: 0; padding: 0; text-align: left; max-height: 40vh; overflow-y: auto; }
+#rnb-ig-cover .rnb-results:empty { display: none; }
+#rnb-ig-cover .rnb-results a { display: flex; flex-direction: column; padding: 6px 8px; border-radius: 8px; text-decoration: none; }
+#rnb-ig-cover .rnb-results a:hover { background: rgba(127,127,127,.12); }
+#rnb-ig-cover .rnb-results b { color: inherit; font-weight: 600; }
+#rnb-ig-cover .rnb-results small, #rnb-ig-cover .rnb-note { color: #6b6b66; font-size: 13px; }
+@media (prefers-color-scheme: dark) {
+  #rnb-ig-cover .rnb-results small, #rnb-ig-cover .rnb-note { color: #9a9a94; }
+}
