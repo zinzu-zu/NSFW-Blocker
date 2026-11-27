@@ -1,5 +1,5 @@
 // Checks the 10-minute feed pass (feed-pass.js with background.js) on fake
-// Facebook and Instagram pages, and the Instagram account search on the panel.
+// Facebook and Instagram pages, and how the Instagram panel leads to search.
 // A small stand-in for the browser's extension APIs routes messages to
 // background.js and keeps storage in memory. Needs Playwright with Chromium:
 //   node tests/feed-pass.test.js
@@ -51,16 +51,7 @@ const STUB = `
   const page_ = body => `<html><head><style>${css}</style></head><body>${body}</body></html>`;
   await ctx.route('https://www.facebook.com/**', r => r.fulfill({ contentType: 'text/html', body: page_('<div role="feed">posts</div>') }));
   await ctx.route('https://www.instagram.com/**', r => {
-    const u = new URL(r.request().url());
-    if (u.pathname.includes('/search/topsearch/')) {
-      const q = u.searchParams.get('query');
-      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ users: q === 'nobody' ? [] : [
-        { user: { username: 'ana.souza', full_name: 'Ana <b>Souza</b>' } },
-        { user: { username: 'bad name!', full_name: 'skipped' } },
-        { user: { username: 'ana_s', full_name: '' } },
-      ] }) });
-    }
-    r.fulfill({ contentType: 'text/html', body: page_('<article>post</article>') });
+    r.fulfill({ contentType: 'text/html', body: page_('<main><article>post</article><a href="/p/abc/">tile</a><a href="/natgeo/">natgeo</a></main>') });
   });
 
   const page = await ctx.newPage();
@@ -112,22 +103,27 @@ const STUB = `
   const r2 = await page.evaluate(() => chrome.runtime.sendMessage({ type: 'feedPassStart' }));
   check(r2 && r2.refused, 'clock set back: background refuses');
 
-  // Instagram account search on the panel.
-  await page.fill('#rnb-ig-cover input', 'ana');
-  await page.waitForSelector('#rnb-ig-cover .rnb-results a');
-  const links = await page.$$eval('#rnb-ig-cover .rnb-results a', as => as.map(a => [a.getAttribute('href'), a.textContent, a.innerHTML.includes('<b>Souza')]));
-  check(links.length === 2 && links[0][0] === '/ana.souza/' && links[1][0] === '/ana_s/', 'search lists valid accounts as profile links');
-  check(links[0][1].includes('Ana <b>Souza</b>') && !links[0][2], 'names shown as plain text');
-  await page.fill('#rnb-ig-cover input', 'nobody');
-  await page.waitForSelector('text=No accounts found');
-  check(true, 'empty search says so');
+  // Instagram's own search: the panel links to it, its grid is hidden, and
+  // hashtag pages reached from it are covered.
+  check(await page.getAttribute('#rnb-ig-cover a.rnb-search', 'href') === '/explore/search/', 'panel links to Instagram search');
+  await page.goto('https://www.instagram.com/explore/search/');
+  await page.waitForTimeout(700);
+  check(!(await covered('#rnb-ig-cover')), 'search page not covered');
+  check(await page.evaluate(() => document.documentElement.classList.contains('rnb-ig-search')), 'search page marked');
+  check(!(await page.isVisible('main a[href="/p/abc/"]')) && await page.isVisible('main a[href="/natgeo/"]'), 'search page hides posts, keeps account results');
+  await page.goto('https://www.instagram.com/explore/tags/cats/');
+  await page.waitForTimeout(700);
+  check(await covered('#rnb-ig-cover'), 'hashtag page covered');
+  await page.goto('https://www.instagram.com/natgeo/');
+  await page.waitForTimeout(700);
+  check(!(await covered('#rnb-ig-cover')), 'profile not covered');
+  await page.goto('https://www.instagram.com/');
+  await page.waitForTimeout(700);
   await page.fill('#rnb-ig-cover input', 'ana.souza');
   await Promise.all([page.waitForURL('**/ana.souza/'), page.press('#rnb-ig-cover input', 'Enter')]);
   check(page.url().endsWith('/ana.souza/'), 'Enter opens the typed username');
   if (process.argv[2]) {
     await page.goto('https://www.instagram.com/');
-    await page.fill('#rnb-ig-cover input', 'ana');
-    await page.waitForSelector('#rnb-ig-cover .rnb-results a');
     await page.screenshot({ path: process.argv[2] });
   }
 
