@@ -223,6 +223,18 @@ PHONE_KIT_TEST_ONCE=1 kit "" check
 check "comments, quotes and CRLF: read" said "Phone: Pixel 6a, Android 16."
 check "Threads may be on the list" not_said "an Instagram or Reddit app"
 
+# Lists can have one app per line, indented, each with its own note.
+printf '%s\n' "NEXTDNS_HOST=my1234.dns.nextdns.io" "APP_LIST=com.whatsapp" "    # chat" \
+  "    org.telegram.messenger      # Telegram" "  com.instagram.barcelona" "" "BLACK_AND_WHITE=yes" > "$PHONE_KIT_CONF"
+PHONE_KIT_TEST_ONCE=1 kit "" check
+check "indented list lines: read" said "Phone: Pixel 6a, Android 16."
+printf '%s\n' "NEXTDNS_HOST=my1234.dns.nextdns.io" "BLOCK_APPS=" "    com.example.a" "    Not An App" > "$PHONE_KIT_CONF"
+kit "" setup
+check "indented list lines: checked like the rest" said 'BLOCK_APPS has "Not"'
+printf '%s\n' "    com.example.a" "NEXTDNS_HOST=my1234.dns.nextdns.io" > "$PHONE_KIT_CONF"
+kit "" setup
+check "an indented line before any setting: refused" said "line 1: expected NAME=value"
+
 echo "--- Finding the phone ---"
 
 fresh
