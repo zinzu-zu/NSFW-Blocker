@@ -37,6 +37,7 @@ final class Guard {
     static final String K_LAST_COVER_AT = "lastCoverAt";     // wall-clock ms
     static final String K_HANDLED = "handledPackages";       // apps already dealt with; not paused again unless reinstalled
     static final String K_OURS = "pausedByGuard";            // apps Feed Guard itself paused
+    static final String K_INSTALL_TIMES = "installTimes";    // "package=ms": when the apps in the two above were first installed, to spot a reinstall
     static final String K_FIREFOX_PAUSED = "firefoxPaused";  // Feed Guard paused Firefox because its access was off
     static final String K_UNPAUSABLE = "unpausable";         // apps a rule wants paused that Android refused to pause
     static final String K_PINS = "signaturePins";            // "package=sha256" for listed apps you installed (see Pins)
@@ -51,6 +52,7 @@ final class Guard {
     static final int N_URL_UNREADABLE = 4;
     static final int N_UNPAUSABLE = 5;
     static final int N_NOT_SAME_APP = 6;
+    // 7 is banking mode's own notification (BankMode.N_BANKING).
     private static final String CHANNEL = "alerts";
 
     static SharedPreferences prefs(Context c) {
@@ -122,9 +124,13 @@ final class Guard {
     /** Run from the watchdog job and at start-up: the safety net for when the service isn't running. */
     static void periodicCheck(Context c) {
         try {
-            // With the secure settings permission, a switched-off Feed Guard switches itself back on.
-            SecureSettings.keepServiceOn(c);
-            if (armed(c) && !serviceEnabled(c)) AppGate.pauseFirefox(c);
+            // Banking mode keeps Feed Guard off until its time is up, and Firefox paused
+            // meanwhile; once it's up, this switches the guards back on.
+            if (!BankMode.check(c)) {
+                // With the secure settings permission, a switched-off Feed Guard switches itself back on.
+                SecureSettings.keepServiceOn(c);
+                if (armed(c) && !serviceEnabled(c)) AppGate.pauseFirefox(c);
+            }
             // Without the service nothing knows which app is on screen: black and white, no exceptions.
             if (!GuardService.isRunning()) ColorGuard.enforceAlone(c);
         } catch (RuntimeException e) {
