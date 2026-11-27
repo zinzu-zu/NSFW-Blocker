@@ -110,7 +110,7 @@ final class Overlay {
         TextView body = text(c, news
                 ? "News sites open again at " + NewsBlock.time(c, untilWall) + ". "
                         + "They stay closed for a while after you wake up, so the day starts with something else."
-                : "Instagram and Reddit only open in Firefox while the Reddit NSFW Blocker add-on is on.\n\n"
+                : "Instagram and Reddit only open in Firefox while the NSFW Blocker add-on is on.\n\n"
                         + "To turn it back on, open a new tab, then go to Firefox's menu › Extensions.", 15, muted);
         body.setPadding(0, dp(8), 0, dp(16));
         box.addView(body);

@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: tells the Feed Guard app on Android that this page is
+// NSFW Blocker: tells the Feed Guard app on Android that this page is
 // protected. It adds one invisible element at the very start of the page,
 // labelled "feedguard <unix seconds>", and rewrites the time every 2 seconds.
 // guard-marker.css is what makes the element visible to Android, and Firefox

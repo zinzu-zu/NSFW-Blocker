@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: background service worker.
+// NSFW Blocker: background service worker.
 // Decides whether a subreddit or user profile is adult-only (Reddit's own
 // over18 flag from about.json) and redirects tabs away from them. Keeping it
 // installed is left to browser policy (see lockdown/), not to this script.
