@@ -24,7 +24,7 @@
       '<form><input type="text" name="q" placeholder="Search Facebook" aria-label="Search Facebook" autocapitalize="off" autocomplete="off"></form>' +
       '<a href="/messages/">Messages</a>' +
       '<a href="/groups/joins/">Your groups</a>' +
-      '<a href="/notifications/">Notifications</a>' +
+      '<a href="/marketplace/">Marketplace</a>' +
       '<a href="/me/">Your profile</a>' +
       '</div>';
     return cover;
