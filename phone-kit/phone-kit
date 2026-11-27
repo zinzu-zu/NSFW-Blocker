@@ -172,7 +172,7 @@ yes_or_no() {  # setting name, value
 }
 
 load_conf() {
-  local line key val n=0 p
+  local line key="" val n=0 p
   if [ ! -f "$CONF" ]; then
     if [ "$CONF" = "$HERE/my-phone.conf" ] && [ -f "$HERE/my-phone.conf.example" ]; then
       cp "$HERE/my-phone.conf.example" "$CONF"
@@ -186,7 +186,18 @@ load_conf() {
   while IFS= read -r line || [ -n "$line" ]; do
     n=$((n + 1))
     line=$(printf '%s' "$line" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]#.*$//; s/[[:space:]]*$//')
-    case "$line" in ''|'#'*) continue ;; *=*) ;; *) conf_error $n "expected NAME=value" ;; esac
+    case "$line" in ''|'#'*) continue ;; esac
+    # A line without = goes on with the list above it, so a list can have one
+    # app per line (indented or not).
+    case "$line" in *=*) ;; *)
+      case "$key" in
+        APP_LIST|COLOR_APPS|BLOCK_APPS|HIDE_APPS|PROTECT_APPS|BANK_APPS|NEWS_SITES|NEWS_APPS)
+          eval "val=\$C_$key"
+          printf -v "C_$key" '%s' "${val:+$val }$line"
+          continue ;;
+      esac ;;
+    esac
+    case "$line" in *=*) ;; *) conf_error $n "expected NAME=value" ;; esac
     key=$(printf '%s' "${line%%=*}" | sed 's/[[:space:]]*$//')
     val=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//')
     case "$val" in \"*\") val=${val#\"}; val=${val%\"} ;; \'*\') val=${val#\'}; val=${val%\'} ;; esac
