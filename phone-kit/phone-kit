@@ -147,7 +147,7 @@ sha256_of() {
 C_NEXTDNS_HOST="" C_APP_LIST="" C_ONLY_LISTED_APPS=no C_BLACK_AND_WHITE=yes
 C_COLOR_APPS="" C_BLOCK_APPS="" C_HIDE_APPS="" C_PROTECT_APPS=""
 C_LOCK_DEFAULT_APPS="" C_ADDON_PAGE="" C_USE_OWNDROID_API=yes
-C_BANK_APPS="" C_NEWS_SITES="" C_NEWS_APPS=""
+C_BANK_APPS="" C_NEWS_SITES="" C_NEWS_APPS="" C_ADDON_FILE=""
 PKG_RE='^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$'
 HOST_RE='^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$'
 
@@ -191,7 +191,7 @@ load_conf() {
     val=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//')
     case "$val" in \"*\") val=${val#\"}; val=${val%\"} ;; \'*\') val=${val#\'}; val=${val%\'} ;; esac
     case "$key" in
-      NEXTDNS_HOST|APP_LIST|ONLY_LISTED_APPS|BLACK_AND_WHITE|COLOR_APPS|BLOCK_APPS|HIDE_APPS|PROTECT_APPS|LOCK_DEFAULT_APPS|ADDON_PAGE|USE_OWNDROID_API|BANK_APPS|NEWS_SITES|NEWS_APPS)
+      NEXTDNS_HOST|APP_LIST|ONLY_LISTED_APPS|BLACK_AND_WHITE|COLOR_APPS|BLOCK_APPS|HIDE_APPS|PROTECT_APPS|LOCK_DEFAULT_APPS|ADDON_PAGE|USE_OWNDROID_API|BANK_APPS|NEWS_SITES|NEWS_APPS|ADDON_FILE)
         printf -v "C_$key" '%s' "$val" ;;
       *) conf_error $n "there's no setting called $key" ;;
     esac
@@ -232,6 +232,8 @@ load_conf() {
   C_USE_OWNDROID_API=$(yes_or_no USE_OWNDROID_API "$C_USE_OWNDROID_API") || exit 1
   case "$C_ADDON_PAGE" in ''|https://*) ;; *) die "my-phone.conf: ADDON_PAGE has to start with https://" ;; esac
   case "$C_ADDON_PAGE" in *[[:space:]\'\"\\]*) die "my-phone.conf: ADDON_PAGE can't have spaces or quotes." ;; esac
+  case "$C_ADDON_FILE" in "~") C_ADDON_FILE=$HOME ;; "~/"*) C_ADDON_FILE=$HOME/${C_ADDON_FILE#"~/"} ;; esac
+  [ -z "$C_ADDON_FILE" ] || [ -e "$C_ADDON_FILE" ] || die "my-phone.conf: ADDON_FILE is $C_ADDON_FILE, and there's nothing there."
 
   if [ "$C_ONLY_LISTED_APPS" = yes ] && [ -z "$C_APP_LIST" ]; then
     die "my-phone.conf: ONLY_LISTED_APPS=yes with an empty APP_LIST would pause every app but the phone's basics and Firefox. Put your apps on APP_LIST first."
@@ -655,6 +657,25 @@ one_apk() {  # glob, what: prints the one APK matching it
   printf '%s\n' "$found"
 }
 
+# "FeedGuard-0.4.10.apk" -> a key that sorts by version: 000000000004000010...
+version_key() {
+  printf '%s\n' "$1" | sed 's/^[^0-9]*//; s/\.[A-Za-z]*$//' \
+    | awk -F. '{ k = ""; for (i = 1; i <= 4; i++) k = k sprintf("%06d", $i + 0); print k }'
+}
+
+newest_apk() {  # glob, what: prints the APK with the highest version matching it
+  local f best="" bestk="" k n=0
+  for f in "$APKS"/$1; do
+    [ -f "$f" ] || continue
+    case "$(basename "$f")" in *[Tt]est[Kk]ey*) continue ;; esac
+    n=$((n + 1))
+    k=$(version_key "$(basename "$f")")
+    if [ -z "$best" ] || [ "$k" \> "$bestk" ]; then best=$f; bestk=$k; fi
+  done
+  [ "$n" -le 1 ] || say "Using $(basename "$best"), the newest of the $n $2 APKs in apks."
+  printf '%s\n' "$best"
+}
+
 fetch_owndroid() {
   local json urls n url name
   say "Downloading OwnDroid $OWNDROID_TAG from GitHub. It's kept in apks, so every phone gets this same copy."
@@ -687,10 +708,42 @@ find_apks() {
     printf '%s  %s\n' "$sum" "$(basename "$OWNDROID_APK")" > "$pin" || die "Can't write $pin."
     say "Kept OwnDroid's fingerprint in apks/OwnDroid.apk.sha256: every phone gets this same copy."
   fi
-  FEEDGUARD_APK=$(one_apk 'FeedGuard-*.apk' "Feed Guard") || exit 1
-  WATCHLIMIT_APK=$(one_apk 'WatchLimit-*.apk' "Watch Limit") || exit 1
+  FEEDGUARD_APK=$(newest_apk 'FeedGuard-*.apk' "Feed Guard")
+  WATCHLIMIT_APK=$(newest_apk 'WatchLimit-*.apk' "Watch Limit")
   [ -n "$FEEDGUARD_APK" ] || die "Feed Guard's APK (FeedGuard-0.2.0.apk or newer) isn't in $APKS."
   [ -n "$WATCHLIMIT_APK" ] || die "Watch Limit's APK (WatchLimit-1.0.apk or newer) isn't in $APKS."
+  find_addon
+}
+
+ADDON_ID=reddit-nsfw-blocker@self-hosted
+ADDON_XPI="" ADDON_VERSION=""
+
+xpi_version() { unzip -p "$1" manifest.json 2>/dev/null | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1; }
+xpi_signed() { unzip -l "$1" 2>/dev/null | grep -q -E 'META-INF/(mozilla\.rsa|cose\.sig)'; }
+xpi_ours() { unzip -p "$1" manifest.json 2>/dev/null | grep -q "\"$ADDON_ID\""; }
+
+# The newest signed copy of the add-on: in apks, and in ADDON_FILE (a file, or
+# a folder of them) from my-phone.conf. Firefox only takes copies Mozilla signed.
+find_addon() {
+  local f v k bestk="" unsigned="" unsignedk=""
+  for f in "$APKS"/*.xpi "$C_ADDON_FILE" "${C_ADDON_FILE%/}"/*.xpi; do
+    [ -n "$f" ] && [ -f "$f" ] || continue
+    case "$f" in *.xpi) ;; *) continue ;; esac
+    xpi_ours "$f" || continue
+    v=$(xpi_version "$f")
+    [ -n "$v" ] || continue
+    k=$(version_key "$v")
+    if ! xpi_signed "$f"; then
+      if [ -z "$unsignedk" ] || [ "$k" \> "$unsignedk" ]; then unsigned=$v; unsignedk=$k; fi
+      continue
+    fi
+    if [ -z "$bestk" ] || [ "$k" \> "$bestk" ]; then ADDON_XPI=$f; ADDON_VERSION=$v; bestk=$k; fi
+  done
+  if [ -n "$unsignedk" ] && { [ -z "$bestk" ] || [ "$unsignedk" \> "$bestk" ]; }; then
+    say "The add-on's version $unsigned isn't signed by Mozilla yet, so Firefox won't take it."
+    say "Get it signed (its UPDATE-README says how) and put the .xpi next to the others."
+  fi
+  return 0
 }
 
 install_apk() {  # package, file
@@ -1167,25 +1220,45 @@ step_audit() {
 }
 
 step_pages() {
+  local name
   begin "Firefox: the NextDNS check and the add-on"
-  if [ -f "$STATE/pages" ]; then ok "Done."; return; fi
-  open_url "https://$NEXTDNS_TEST"
-  say "   Firefox opened $NEXTDNS_TEST. It should say \"status\": \"ok\". If it doesn't,"
-  say "   Firefox uses its own secure DNS: Firefox › Settings › Privacy and security ›"
-  say "   DNS over HTTPS: Off."
-  wait_enter nextdns "Press Enter to go on."
-  if [ -n "$C_ADDON_PAGE" ]; then
-    open_url "$C_ADDON_PAGE"
-    say "   Firefox opened the add-on's page. Tap Add to Firefox, and allow it in private tabs."
-  else
-    say "   In Firefox, find Reddit NSFW Blocker on addons.mozilla.org, tap Add to Firefox, and"
-    say "   allow it in private tabs."
+  if [ ! -f "$STATE/pages" ]; then
+    open_url "https://$NEXTDNS_TEST"
+    say "   Firefox opened $NEXTDNS_TEST. It should say \"status\": \"ok\". If it doesn't,"
+    say "   Firefox uses its own secure DNS: Firefox › Settings › Privacy and security ›"
+    say "   DNS over HTTPS: Off."
+    wait_enter nextdns "Press Enter to go on."
   fi
-  wait_enter addon "Press Enter once the add-on is in."
-  open_url "https://www.instagram.com/"
-  say "   Firefox opened instagram.com, so Feed Guard sees the add-on and starts guarding."
-  wait_enter instagram "Press Enter to go on."
-  touch "$STATE/pages"
+  if [ -n "$ADDON_XPI" ]; then
+    if [ -f "$STATE/addon-$ADDON_VERSION" ]; then
+      say "   The add-on $ADDON_VERSION went on this phone before."
+    else
+      name=nsfw-blocker-$ADDON_VERSION.xpi
+      "$ADB" -s "$SERIAL" push "$ADDON_XPI" "/sdcard/Download/$name" >/dev/null 2>&1 \
+        || stop "Couldn't copy the add-on to the phone's Downloads."
+      say "   The add-on $ADDON_VERSION is in the phone's Downloads as $name. In Firefox:"
+      say "   ⋮ › Settings › Install add-on from file, and pick $name. Tap Add, and allow"
+      say "   it in private tabs. If there's no Install add-on from file: Settings › About"
+      say "   Firefox, tap the Firefox logo 5 times, and go back to Settings."
+      wait_enter addon-file "Press Enter once Firefox says the add-on was added."
+      touch "$STATE/addon-$ADDON_VERSION"
+    fi
+  elif [ ! -f "$STATE/pages" ]; then
+    if [ -n "$C_ADDON_PAGE" ]; then
+      open_url "$C_ADDON_PAGE"
+      say "   Firefox opened the add-on's page. Tap Add to Firefox, and allow it in private tabs."
+    else
+      say "   In Firefox, find NSFW Blocker on addons.mozilla.org, tap Add to Firefox, and"
+      say "   allow it in private tabs."
+    fi
+    wait_enter addon "Press Enter once the add-on is in."
+  fi
+  if [ ! -f "$STATE/pages" ]; then
+    open_url "https://www.instagram.com/"
+    say "   Firefox opened instagram.com, so Feed Guard sees the add-on and starts guarding."
+    wait_enter instagram "Press Enter to go on."
+    touch "$STATE/pages"
+  fi
   ok "Done."
 }
 

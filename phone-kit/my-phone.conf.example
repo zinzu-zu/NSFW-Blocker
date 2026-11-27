@@ -70,8 +70,16 @@ PROTECT_APPS=
 LOCK_DEFAULT_APPS=
 
 # The add-on's page on addons.mozilla.org, which the kit then opens in Firefox.
-# Empty: you look up Reddit NSFW Blocker there yourself.
+# Empty: you look up NSFW Blocker there yourself. Not used when ADDON_FILE
+# below has a signed copy of the add-on.
 ADDON_PAGE=
+
+# Where the signed add-on (.xpi) is kept on this Mac: a file, or a folder of
+# them. The kit puts the newest signed version on the phone, and again each
+# time a newer one turns up there (and in apks). It goes by the version inside
+# the file, so file names don't matter. Empty: only .xpi files in apks count.
+# For example: ADDON_FILE=~/Claude Projects/Scripts/Finished/NSFW-blocker
+ADDON_FILE=
 
 # yes: the kit switches OwnDroid's restrictions, hidden apps and protected apps
 # on itself, through OwnDroid's API. The API is on only during setup, with a key
