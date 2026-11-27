@@ -1,0 +1,24 @@
+/* The feed pass (feed-pass.js): the offer on the feed panel, and the
+   countdown while the feed is open. */
+#rnb-ig-cover .rnb-pass, #rnb-fb-cover .rnb-pass {
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+  margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(127,127,127,.25);
+}
+.rnb-pass small { color: #6b6b66; font-size: 13px; }
+.rnb-pass button {
+  font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid #2f6f4f; background: #2f6f4f; color: #fff;
+}
+.rnb-pass button.rnb-quiet { background: transparent; color: #2f6f4f; border-color: transparent; }
+#rnb-pass-pill {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2147483647;
+  padding: 6px 12px; border-radius: 999px; pointer-events: none;
+  background: #1f201f; color: #ececea; font: 13px/1.3 system-ui, -apple-system, sans-serif;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+}
+@media (prefers-color-scheme: dark) {
+  .rnb-pass small { color: #9a9a94; }
+  .rnb-pass button { border-color: #7cc39c; background: #7cc39c; color: #111211; }
+  .rnb-pass button.rnb-quiet { background: transparent; color: #7cc39c; border-color: transparent; }
+  #rnb-pass-pill { background: #ececea; color: #1d1d1b; }
+}

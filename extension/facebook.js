@@ -6,6 +6,7 @@
 (() => {
   if (window.__rnbFbLoaded || window.top !== window) return;
   window.__rnbFbLoaded = true;
+  const pass = window.__rnbFeedPass; // the 10-minute feed pass, see feed-pass.js
 
   // "/" and "/home.php" are the home feed (with or without "?sk=..." filters);
   // "/watch/" is the Watch feed; "/reel/" and "/reels/" the Reels tab;
@@ -27,6 +28,7 @@
       '<a href="/marketplace/">Marketplace</a>' +
       '<a href="/me/">Your profile</a>' +
       '</div>';
+    if (pass) cover.querySelector('.rnb-card').append(pass.panelBox());
     return cover;
   }
 
@@ -52,6 +54,8 @@
       // Facebook rebuilds the page often, so put the cover back if it's removed.
       const host = document.body || document.documentElement;
       if (cover.parentNode !== host) host.appendChild(cover);
+      const box = cover.querySelector('.rnb-pass');
+      if (box) pass.renderPanel(box);
       // Stop feed videos playing sound behind the cover.
       for (const v of document.querySelectorAll('video')) { if (!v.paused) v.pause(); v.muted = true; }
     } else if (cover) {
@@ -61,7 +65,12 @@
 
   // Logged out, Facebook shows its login form at "/", so leave that visible.
   const loginForm = () => document.querySelector('input[type="password"], input[name="pass"]');
-  const tick = () => setCover(isFeed() && !loginForm());
+  const tick = () => {
+    const feed = isFeed() && !loginForm();
+    const passOpen = Boolean(pass && pass.open());
+    setCover(feed && !passOpen);
+    if (pass) pass.showPill(feed && passOpen);
+  };
   tick();
   document.addEventListener('DOMContentLoaded', tick);
   // Facebook changes pages without reloading, so keep checking.
