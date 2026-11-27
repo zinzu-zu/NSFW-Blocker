@@ -76,7 +76,7 @@ Android doesn't let an adult's phone be locked by someone else without device-ma
 
 If you installed the lock before Safari was part of it, you install the profile again. The new one replaces the old one (same name), so your friend types the admin password once.
 
-1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/reddit-nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
+1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
 2. Replace `lockdown/lockdown.sh` and `README.md` in the blocker's folder with the new ones.
 3. Your friend runs `sudo bash lockdown.sh` in the `lockdown` folder and gives the same answers as last time (the add-on slug, or Enter for the `.xpi`).
 4. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
@@ -87,7 +87,7 @@ If you installed the lock before Safari was part of it, you install the profile 
 
 Version 1.3.0 hides Facebook's feed in Firefox. To also block facebook.com in Safari and Chrome, so the feed can't be opened there instead, the profile is installed again. Your friend types the admin password twice.
 
-1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/reddit-nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
+1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
 2. Replace `extension/`, `lockdown/lockdown.sh`, `extension-upload.zip` and `README.md` in the blocker's folder with the new ones.
 3. Sign 1.3.0 and install it as in "Updating a locked Mac" below.
 4. Run `sudo bash lockdown.sh` in the `lockdown` folder, give the same answers as last time, and type the admin password. From 1.4.0 it no longer asks about Instagram or Facebook: they're always blocked outside Firefox.
