@@ -42,7 +42,7 @@ if [[ ! -f "$SRC" ]]; then
 fi
 
 # A signed add-on carries Mozilla's signature files; an unsigned zip doesn't.
-if ! unzip -l "$SRC" 2>/dev/null | grep -q "META-INF/"; then
+if ! xpi_signed "$SRC"; then
   echo "This file isn't signed by Mozilla: $SRC"
   echo "Download the signed .xpi from your add-on's version page instead."; exit 1
 fi
