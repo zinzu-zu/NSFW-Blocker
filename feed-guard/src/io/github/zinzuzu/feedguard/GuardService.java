@@ -1,6 +1,7 @@
 package io.github.zinzuzu.feedguard;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -33,6 +35,8 @@ import java.util.Set;
  * white (ColorGuard), and if its accessibility access is switched off, it
  * switches it back on, or failing that pauses Firefox. When a bank app comes
  * on screen, it switches itself and Watch Limit off for banking mode (BankMode).
+ * It watches the screen go off and the phone being unlocked, for the morning
+ * news block (NewsBlock), and covers news sites in Firefox while that runs.
  */
 public final class GuardService extends AccessibilityService {
     private static final long MIN_GAP_MS = 600;
@@ -73,6 +77,10 @@ public final class GuardService extends AccessibilityService {
     /** BankMode.bankApps(), kept up to date on the background thread. */
     private volatile Set<String> bankApps = Collections.emptySet();
     private volatile long bankTriedAt = -BANK_RETRY_MS;
+    /** When the morning news block ends, in SystemClock.elapsedRealtime() ms; 0 if none runs. */
+    private volatile long newsUntil;
+    /** The news sites, from the managed configuration, while a block runs. */
+    private volatile Set<String> newsSites = Collections.emptySet();
 
     private final Runnable check = new Runnable() {
         @Override public void run() { runCheck(); }
@@ -104,10 +112,54 @@ public final class GuardService extends AccessibilityService {
                 AppGate.scan(GuardService.this, null);
                 WatchdogJob.schedule(GuardService.this);
                 bankApps = new HashSet<>(BankMode.bankApps(GuardService.this));
+                // Connected while the phone is already unlocked (after a restart, the
+                // service starts after the unlock): that unlock counts too.
+                if (unlockedNow()) onUnlock();
+                refreshNews();
             }
         });
         queueCheck(0);
     }
+
+    private boolean unlockedNow() {
+        try {
+            PowerManager pm = getSystemService(PowerManager.class);
+            KeyguardManager km = getSystemService(KeyguardManager.class);
+            return pm != null && km != null && pm.isInteractive() && !km.isKeyguardLocked();
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** On the background thread: the phone was unlocked. Starts the news block if this is waking up. */
+    private void onUnlock() {
+        if (NewsBlock.unlocked(this)) {
+            AppGate.scan(this, null);
+            refreshNews();
+            queueCheck(0);
+        }
+    }
+
+    /** On the background thread: reads whether the news block runs, and sets a timer for its end. */
+    private void refreshNews() {
+        Handler h = bg;
+        if (h == null) return;
+        h.removeCallbacks(newsEnd);
+        long left = NewsBlock.timeLeft(this);
+        newsSites = left > 0 ? Config.read(this).newsSites : Collections.<String>emptySet();
+        newsUntil = left > 0 ? SystemClock.elapsedRealtime() + left : 0;
+        if (left > 0) h.postDelayed(newsEnd, left + 1000);
+    }
+
+    private final Runnable newsEnd = new Runnable() {
+        @Override public void run() {
+            refreshNews();
+            if (newsUntil == 0) {
+                AppGate.scan(GuardService.this, null); // lifts the news apps' pause
+                queueCheck(0);
+            }
+        }
+    };
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -194,6 +246,7 @@ public final class GuardService extends AccessibilityService {
             try {
                 unregisterReceiver(packageReceiver);
                 unregisterReceiver(configReceiver);
+                unregisterReceiver(screenReceiver);
             } catch (RuntimeException ignored) {
                 // Not registered.
             }
@@ -251,16 +304,21 @@ public final class GuardService extends AccessibilityService {
         in.nowElapsedMs = lastCheckAt;
         in.nowWallMs = System.currentTimeMillis();
         CoverDecision.Outcome out = decision.decide(in);
+        // The morning news block: news sites are covered, add-on or not.
+        boolean news = snap.firefoxVisible && newsUntil > lastCheckAt
+                && NewsRules.isNewsHost(UrlText.host(snap.urlText), newsSites);
 
         recordStatus(prefs, snap, out, in);
         if (snap.firefoxVisible) LastLook.record(snap, out, in.nowWallMs);
 
-        final boolean cover = out.cover;
+        final boolean cover = out.cover || news;
+        final boolean newsCover = news && !out.cover;
+        final long untilWall = news ? in.nowWallMs + (newsUntil - lastCheckAt) : 0;
         main.post(new Runnable() {
             @Override public void run() {
                 Overlay o = overlay;
                 if (o == null) return;
-                if (cover && running) o.show(); else o.hide();
+                if (cover && running) o.show(newsCover, untilWall); else o.hide();
             }
         });
 
@@ -334,12 +392,18 @@ public final class GuardService extends AccessibilityService {
         // Someone lifted a pause (OwnDroid, Watch Limit): with "Only apps on the
         // list" on, an app that isn't listed gets paused again.
         config.addAction(Intent.ACTION_PACKAGES_UNSUSPENDED);
+        // The morning news block: when the phone is put down and picked up again.
+        IntentFilter screen = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        screen.addAction(Intent.ACTION_USER_PRESENT);
+        screen.addAction(Intent.ACTION_SHUTDOWN);
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(packageReceiver, packages, Context.RECEIVER_NOT_EXPORTED);
             registerReceiver(configReceiver, config, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(screenReceiver, screen, Context.RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(packageReceiver, packages);
             registerReceiver(configReceiver, config);
+            registerReceiver(screenReceiver, screen);
         }
         receiversRegistered = true;
     }
@@ -354,6 +418,27 @@ public final class GuardService extends AccessibilityService {
         }
     };
 
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent intent) {
+            final String action = intent.getAction();
+            if (Intent.ACTION_SHUTDOWN.equals(action)) {
+                NewsBlock.shuttingDown(GuardService.this); // right away: the phone is going off
+                return;
+            }
+            Handler h = bg;
+            if (h == null) return;
+            h.post(new Runnable() {
+                @Override public void run() {
+                    if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+                        NewsBlock.screenOff(GuardService.this);
+                    } else if (Intent.ACTION_USER_PRESENT.equals(action)) {
+                        onUnlock();
+                    }
+                }
+            });
+        }
+    };
+
     private final BroadcastReceiver configReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent intent) {
             if (!Intent.ACTION_PACKAGES_UNSUSPENDED.equals(intent.getAction())) {
@@ -363,6 +448,7 @@ public final class GuardService extends AccessibilityService {
                         @Override public void run() {
                             ColorGuard cg = colors;
                             if (cg != null) cg.onConfigChanged();
+                            refreshNews();
                         }
                     });
                 }

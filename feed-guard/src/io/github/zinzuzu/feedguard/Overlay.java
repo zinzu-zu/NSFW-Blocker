@@ -24,6 +24,9 @@ final class Overlay {
     private final AccessibilityService service;
     private final WindowManager windowManager;
     private View view;
+    /** Whether the cover shown is the morning news one, and until when (wall-clock ms). */
+    private boolean shownForNews;
+    private long shownUntil;
 
     Overlay(AccessibilityService service) {
         this.service = service;
@@ -34,9 +37,22 @@ final class Overlay {
         return view != null;
     }
 
-    void show() {
-        if (view != null || windowManager == null) return;
-        View v = build();
+    /**
+     * Shows the cover, or switches it to the other text.
+     *
+     * @param news the morning news block's text instead of the add-on's
+     * @param untilWall when the news block ends (wall-clock ms), for its text
+     */
+    void show(boolean news, long untilWall) {
+        if (view != null) {
+            // Same text (the end time moves by seconds as checks run): keep it.
+            if (shownForNews == news && (!news || Math.abs(shownUntil - untilWall) < 60_000)) return;
+            hide();
+        }
+        if (windowManager == null) return;
+        shownForNews = news;
+        shownUntil = untilWall;
+        View v = build(news, untilWall);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -63,7 +79,7 @@ final class Overlay {
         view = null;
     }
 
-    private View build() {
+    private View build(boolean news, long untilWall) {
         Context c = service;
         boolean dark = (c.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES;
@@ -87,12 +103,15 @@ final class Overlay {
         bg.setCornerRadius(dp(16));
         box.setBackground(bg);
 
-        TextView title = text(c, "This page is blocked", 20, ink);
+        TextView title = text(c, news ? "No news yet this morning" : "This page is blocked", 20, ink);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         box.addView(title);
 
-        TextView body = text(c, "Instagram and Reddit only open in Firefox while the Reddit NSFW Blocker add-on is on.\n\n"
-                + "To turn it back on, open a new tab, then go to Firefox's menu › Extensions.", 15, muted);
+        TextView body = text(c, news
+                ? "News sites open again at " + NewsBlock.time(c, untilWall) + ". "
+                        + "They stay closed for a while after you wake up, so the day starts with something else."
+                : "Instagram and Reddit only open in Firefox while the Reddit NSFW Blocker add-on is on.\n\n"
+                        + "To turn it back on, open a new tab, then go to Firefox's menu › Extensions.", 15, muted);
         body.setPadding(0, dp(8), 0, dp(16));
         box.addView(body);
 

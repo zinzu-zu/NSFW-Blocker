@@ -400,6 +400,8 @@ final class AppGate {
         in.listMode = cfg.listMode;
         in.handled = handled;
         in.ours = ours;
+        in.newsBlock = NewsBlock.active(c);
+        in.newsApps = in.newsBlock ? NewsBlock.installedNewsApps(cfg, apps) : Collections.<String>emptySet();
         in.skip = p.getBoolean(Guard.K_FIREFOX_PAUSED, false)
                 ? Collections.singleton(Guard.FIREFOX) : Collections.<String>emptySet();
         AppRules.Plan plan = AppRules.plan(in);
@@ -462,10 +464,13 @@ final class AppGate {
         Intent status = new Intent(c, MainActivity.class);
         if (!pausedNow.isEmpty()) {
             boolean fromList = false;
+            boolean allNews = true;
             for (String pkg : pausedNow) {
-                if (!plan.browserRule.contains(pkg)) fromList = true;
+                if (!plan.browserRule.contains(pkg) && !plan.newsRule.contains(pkg)) fromList = true;
+                if (!plan.newsRule.contains(pkg)) allNews = false;
             }
-            Guard.notify(c, Guard.N_APPS_PAUSED,
+            // Only news apps: the morning news block's own notification already says why.
+            if (!allNews) Guard.notify(c, Guard.N_APPS_PAUSED,
                     pausedNow.size() <= 4 ? "Paused " + Guard.labels(c, pausedNow) : "Paused " + pausedNow.size() + " apps",
                     fromList
                             ? "Only the apps on your list open. Apps go on the list in OwnDroid's settings for Feed Guard."
