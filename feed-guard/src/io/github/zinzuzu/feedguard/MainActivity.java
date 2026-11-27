@@ -79,7 +79,8 @@ public final class MainActivity extends Activity {
         list.addView(title);
         list.addView(text("Instagram and Reddit only open in Firefox while the Reddit NSFW Blocker add-on is running on the page. "
                 + "Other browsers, and the Instagram and Reddit apps, are paused when they're installed."
-                + (cfg.listMode ? " Only the apps on your list open." : "")
+                + (cfg.listMode ? " Allowlist mode: only the apps on your allowlist open."
+                        : " Blocklist mode: other apps run, except the ones on your blocklist.")
                 + (cfg.grayscale && secure ? " The screen stays black and white, except in maps." : ""), 15));
 
         boolean banking = BankMode.active(this);
@@ -146,7 +147,7 @@ public final class MainActivity extends Activity {
         row(!ffPaused, "Firefox",
                 ffPaused && banking ? "Paused during banking mode. It opens again once Feed Guard is back on, at " + bankingUntil + " at the latest."
                         : ffPaused ? "Paused, because Feed Guard's accessibility access was off. It opens again once the access is back on."
-                        : ffNotListed ? "Paused, because it isn't on your list."
+                        : ffNotListed ? "Paused, because it isn't on your allowlist."
                         : "Not paused by Feed Guard.",
                 null, null);
 
@@ -154,23 +155,26 @@ public final class MainActivity extends Activity {
             @Override public void onClick(View v) { pickApps(); }
         };
         if (cfg.listMode) {
-            row(true, "Only apps on the list",
-                    "On. " + cfg.allowed.size() + (cfg.allowed.size() == 1 ? " app" : " apps")
-                            + " on your list. Every other app is paused, apart from calls, texts, contacts, the clock, the keyboard, settings and OwnDroid.",
-                    "Pick apps for your list", picker);
+            row(true, "Apps: allowlist mode",
+                    cfg.allowed.size() + (cfg.allowed.size() == 1 ? " app" : " apps")
+                            + " on your allowlist. Every other app is paused, apart from calls, texts, contacts, the clock, the keyboard, settings and OwnDroid. "
+                            + "Turn off \u201cAllowlist mode\u201d in OwnDroid's settings for Feed Guard to let any app run except the blocklist.",
+                    "Pick apps for your allowlist", picker);
         } else {
-            row(true, "Only apps on the list",
-                    "Off. Turned on in OwnDroid's settings for Feed Guard, it pauses every app that isn't on your list, "
-                            + "apart from calls, texts, contacts, the clock, the keyboard, settings and OwnDroid.",
-                    "Pick apps for your list", picker);
+            row(true, "Apps: blocklist mode",
+                    "Any app runs, except other browsers, the Instagram and Reddit apps, and "
+                            + cfg.extraBlocked.size() + (cfg.extraBlocked.size() == 1 ? " app" : " apps") + " on your blocklist. "
+                            + cfg.allowed.size() + (cfg.allowed.size() == 1 ? " app is" : " apps are") + " on your allowlist and never paused. "
+                            + "Both lists are in OwnDroid's settings for Feed Guard.",
+                    "Pick apps for your allowlist", picker);
         }
 
         Set<String> notSame = AppGate.stored(p, Guard.K_NOT_SAME_APP);
         if (!notSame.isEmpty()) {
-            row(false, "Not the copy on your list",
+            row(false, "Not the copy on your allowlist",
                     Guard.labelsWithPackages(this, notSame)
-                            + "\nSigned by someone other than the copy that was on your list, so it's treated as not listed. "
-                            + "To accept this copy, take it off the list in OwnDroid, save, then put it back.",
+                            + "\nSigned by someone other than the copy that was on your allowlist, so it's treated as not listed. "
+                            + "To accept this copy, take it off the allowlist in OwnDroid, save, then put it back.",
                     null, null);
         }
 
@@ -359,7 +363,7 @@ public final class MainActivity extends Activity {
             checked[i] = current.contains(apps.get(i)[1]);
         }
         new AlertDialog.Builder(this)
-                .setTitle("Apps for your list")
+                .setTitle("Apps for your allowlist")
                 .setMultiChoiceItems(names, checked, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override public void onClick(DialogInterface d, int which, boolean isChecked) {
                         checked[which] = isChecked;
