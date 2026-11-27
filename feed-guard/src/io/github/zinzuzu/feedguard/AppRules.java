@@ -22,6 +22,8 @@ import java.util.TreeSet;
  *   icon in the app drawer, and every app you installed yourself, unless it's
  *   on the list or one of the phone's basics. This one keeps re-pausing: the
  *   list is the only way to let an app run.
+ * - The news rule, only during the morning news block (see NewsRules): news
+ *   apps, even ones on the list. It lifts its pauses when the block ends.
  *
  * Pure Java, so it can be tested off the phone.
  */
@@ -119,6 +121,10 @@ final class AppRules {
         Set<String> handled = Collections.emptySet();
         /** Apps Feed Guard paused. */
         Set<String> ours = Collections.emptySet();
+        /** Installed news apps (news_apps, and apps in Android's news category). */
+        Set<String> newsApps = Collections.emptySet();
+        /** The morning news block is running. */
+        boolean newsBlock;
         /** Packages to leave exactly as they are this time: Firefox while the dead-man switch holds it. */
         Set<String> skip = Collections.emptySet();
     }
@@ -128,6 +134,8 @@ final class AppRules {
         final Set<String> browserRule = new TreeSet<>();
         /** Wanted paused by the list rule. */
         final Set<String> listRule = new TreeSet<>();
+        /** Wanted paused by the news rule. */
+        final Set<String> newsRule = new TreeSet<>();
         /** To pause now, unless something already paused them. */
         final Set<String> pause = new TreeSet<>();
         /** Feed Guard's own pauses that no rule wants any more. */
@@ -138,6 +146,8 @@ final class AppRules {
         Plan p = new Plan();
         for (String pkg : in.installed) {
             if (pkg == null || ESSENTIAL.contains(pkg) || in.essential.contains(pkg)) continue;
+            // The news hour holds even for listed apps: listing g1 is for the rest of the day.
+            if (in.newsBlock && in.newsApps.contains(pkg) && !NOT_A_BROWSER.contains(pkg)) p.newsRule.add(pkg);
             if (in.allowed.contains(pkg)) continue;
             boolean browserLike = in.browsers.contains(pkg) || isFeedApp(pkg) || in.extraBlocked.contains(pkg);
             if (browserLike && !NOT_A_BROWSER.contains(pkg)) p.browserRule.add(pkg);
@@ -149,10 +159,11 @@ final class AppRules {
             if (!in.handled.contains(pkg)) p.pause.add(pkg);
         }
         p.pause.addAll(p.listRule);
+        p.pause.addAll(p.newsRule);
         p.pause.removeAll(in.skip);
         for (String pkg : in.ours) {
             if (in.installed.contains(pkg) && !p.browserRule.contains(pkg) && !p.listRule.contains(pkg)
-                    && !in.skip.contains(pkg)) {
+                    && !p.newsRule.contains(pkg) && !in.skip.contains(pkg)) {
                 p.release.add(pkg);
             }
         }
