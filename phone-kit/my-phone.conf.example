@@ -34,6 +34,26 @@ COLOR_APPS=
 # Blocklist: more apps to pause, as Feed Guard pauses other browsers.
 BLOCK_APPS=
 
+# Bank apps for banking mode: while one opens, Feed Guard and Watch Limit
+# switch off for 10 minutes so the bank lets you in. Empty: Feed Guard's own
+# list (Nubank). none: banking mode off.
+BANK_APPS=
+
+# The morning news block: news sites covered in Firefox and news apps paused
+# for a while after you wake up. Web addresses, separated by commas; each also
+# covers its subdomains (globo.com covers g1.globo.com). Empty: Feed Guard's
+# own list of Brazilian and international news sites. Writing a list replaces
+# that one. none: no sites.
+# For example:
+# NEWS_SITES=globo.com, uol.com.br, folha.com.br, cnn.com, nytimes.com
+NEWS_SITES=
+
+# News apps paused during the morning block, as package names. Apps that call
+# themselves news apps are paused too. Empty: Feed Guard's own list (Google
+# News, g1, CNN, BBC News and others, plus YouTube ReVanced). none: only the
+# apps that call themselves news apps.
+NEWS_APPS=
+
 # Apps OwnDroid hides, so they're gone from the phone until OwnDroid shows them
 # again: Chrome, Firefox Focus and the NextDNS app. Apps that aren't on the
 # phone are skipped.
