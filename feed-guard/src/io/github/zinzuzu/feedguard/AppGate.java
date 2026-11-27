@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.Signature;
@@ -26,10 +27,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -340,15 +343,27 @@ final class AppGate {
         PackageManager pm = c.getPackageManager();
         SharedPreferences p = Guard.prefs(c);
 
-        List<ApplicationInfo> apps = pm.getInstalledApplications(0);
+        // One look at the installed apps, with when each was first installed.
+        List<ApplicationInfo> apps = new ArrayList<>();
         Set<String> installed = new HashSet<>();
-        for (ApplicationInfo ai : apps) installed.add(ai.packageName);
+        Map<String, Long> firstInstalled = new HashMap<>();
+        for (PackageInfo pi : pm.getInstalledPackages(0)) {
+            installed.add(pi.packageName);
+            firstInstalled.put(pi.packageName, pi.firstInstallTime);
+            if (pi.applicationInfo != null) apps.add(pi.applicationInfo);
+        }
         Set<String> userInstalled = userInstalled(apps);
 
         Set<String> handled = stored(p, Guard.K_HANDLED);
         Set<String> ours = stored(p, Guard.K_OURS);
         handled.retainAll(installed);
         ours.retainAll(installed);
+        // Uninstalled and installed again since the last scan, perhaps while the
+        // service was off and didn't hear it: the new copy counts as new.
+        Set<String> reinstalled = AppRules.reinstalled(
+                AppRules.parseTimes(p.getStringSet(Guard.K_INSTALL_TIMES, null)), firstInstalled);
+        handled.removeAll(reinstalled);
+        ours.removeAll(reinstalled);
         if (fresh != null) {
             handled.removeAll(fresh);
             ours.removeAll(fresh);
@@ -429,11 +444,18 @@ final class AppGate {
             }
         }
 
+        // Which copy of each app this was, so the next scan can tell a reinstall.
+        Set<String> tracked = new HashSet<>(handled);
+        tracked.addAll(ours);
+        Map<String, Long> installTimes = new TreeMap<>(firstInstalled);
+        installTimes.keySet().retainAll(tracked);
+
         Set<String> unpausableBefore = stored(p, Guard.K_UNPAUSABLE);
         Set<String> notSameBefore = stored(p, Guard.K_NOT_SAME_APP);
         SharedPreferences.Editor e = p.edit()
                 .putStringSet(Guard.K_HANDLED, handled)
                 .putStringSet(Guard.K_OURS, ours)
+                .putStringSet(Guard.K_INSTALL_TIMES, AppRules.formatTimes(installTimes))
                 .putStringSet(Guard.K_PINS, Pins.format(pins))
                 .putStringSet(Guard.K_NOT_SAME_APP, notSameApp);
         if (unpausable != null) e.putStringSet(Guard.K_UNPAUSABLE, unpausable);

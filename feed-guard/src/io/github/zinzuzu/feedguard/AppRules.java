@@ -5,7 +5,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -14,7 +16,8 @@ import java.util.TreeSet;
  * - The browser rule, always on: every browser except Firefox, and apps for
  *   Instagram and Reddit. Firefox is the only browser that runs the add-on, so
  *   any other browser, or the apps themselves, would show the feeds. Each app
- *   is paused once: if your friend unpauses it in OwnDroid, it's left alone.
+ *   is paused once: if it's unpaused in OwnDroid, it's left alone, until it's
+ *   uninstalled and installed again (see reinstalled).
  * - The list rule, only with "Only apps on the list" on: every app with an
  *   icon in the app drawer, and every app you installed yourself, unless it's
  *   on the list or one of the phone's basics. This one keeps re-pausing: the
@@ -200,5 +203,53 @@ final class AppRules {
 
     static Set<String> set(String... items) {
         return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(items)));
+    }
+
+    /**
+     * Apps that were uninstalled and installed again since Feed Guard last
+     * looked: Android's time for when they were first installed has changed (an
+     * update keeps it). A pause goes with the old copy, so AppGate treats the
+     * new copy as a new app, and the browser rule pauses it again. That also
+     * works while Feed Guard's service is off (banking mode, or its access
+     * switched off), when nothing hears the app being installed.
+     *
+     * @param before first-install times stored at the last scan
+     * @param now first-install times of the apps installed now
+     */
+    static Set<String> reinstalled(Map<String, Long> before, Map<String, Long> now) {
+        Set<String> out = new TreeSet<>();
+        for (Map.Entry<String, Long> e : before.entrySet()) {
+            Long was = e.getValue();
+            Long is = now.get(e.getKey());
+            // 0 or less: Android didn't say, so it can't count as a change.
+            if (was != null && is != null && was > 0 && is > 0 && !was.equals(is)) out.add(e.getKey());
+        }
+        return out;
+    }
+
+    /** Reads stored "package=milliseconds" strings, skipping any that don't parse. */
+    static Map<String, Long> parseTimes(Collection<String> stored) {
+        Map<String, Long> out = new TreeMap<>();
+        if (stored == null) return out;
+        for (String s : stored) {
+            if (s == null) continue;
+            int eq = s.indexOf('=');
+            if (eq <= 0 || eq == s.length() - 1) continue;
+            try {
+                long t = Long.parseLong(s.substring(eq + 1));
+                if (t > 0) out.put(s.substring(0, eq), t);
+            } catch (NumberFormatException ignored) {
+                // Skipped: that app counts as not seen before, so it isn't taken for reinstalled.
+            }
+        }
+        return out;
+    }
+
+    static Set<String> formatTimes(Map<String, Long> times) {
+        Set<String> out = new HashSet<>();
+        for (Map.Entry<String, Long> e : times.entrySet()) {
+            if (e.getValue() != null && e.getValue() > 0) out.add(e.getKey() + "=" + e.getValue());
+        }
+        return out;
     }
 }

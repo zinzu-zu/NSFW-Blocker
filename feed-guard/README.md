@@ -19,7 +19,7 @@ Since 0.4.0 **news is off for the first hour of the day**: after the phone has b
 - **Pauses Firefox if Feed Guard itself is switched off** and can't switch itself back on (see below). Firefox stays paused until the access is back on. A check every 15 minutes, and one after each restart, catch the case where the switch-off happened while Feed Guard wasn't running.
 - **Only starts covering pages once it has seen the add-on.** Until it first sees the marker, it covers nothing. You can install it before the add-on update reaches the phone.
 
-It never lifts a pause it didn't make, so it can't undo a pause set in OwnDroid or by Watch Limit. If an app paused for being a browser is unpaused in OwnDroid, Feed Guard leaves that app alone until it's uninstalled and installed again.
+It never lifts a pause it didn't make, so it can't undo a pause set in OwnDroid or by Watch Limit. If an app paused for being a browser is unpaused in OwnDroid, Feed Guard leaves that app alone until it's uninstalled and installed again. It spots a reinstall even if it happened while Feed Guard was off, during banking mode for example.
 
 ### Dumbphone locks (0.2.0)
 
@@ -37,7 +37,7 @@ Bank apps such as Nubank refuse to open while an accessibility service installed
 
 - **Open the bank app with the "Open bank app" icon.** It switches Feed Guard and Watch Limit off, waits until Android no longer lists them as switched on, and only then opens the bank app, so the bank's check at start-up finds them off. Opening the bank app the usual way works too, but Feed Guard only notices it once it's on screen, which can be after the bank has checked. If the bank app then shows its warning, close it and open it again.
 - **They stay off for 10 minutes** from the last time a bank app opened, then switch back on by themselves. Opening a bank app again starts the 10 minutes again. A notification shows the time left and has a **Turn back on now** button, and so does Feed Guard's status screen. A restart, or switching Feed Guard back on in Accessibility settings, ends banking mode too.
-- **Nothing they guard opens meanwhile.** Before it switches itself off, Feed Guard pauses Firefox, and Watch Limit pauses the YouTube apps as soon as it's off. Both open again once the guards are back on. Apps installed meanwhile are caught by a check every 20 seconds. The screen stays black and white, without the colour exception for maps.
+- **Nothing they guard opens meanwhile.** Before it switches itself off, Feed Guard pauses Firefox, and Watch Limit pauses the YouTube apps as soon as it's off. Both open again once the guards are back on. Apps installed meanwhile, or uninstalled and installed again, are caught by a check every 20 seconds. The screen stays black and white, without the colour exception for maps.
 - **Nothing is hidden from the bank.** Banking mode really switches the guards off, so the bank's check sees the phone as it is.
 - **Which apps are bank apps** is set in OwnDroid (**Bank apps**, below; Nubank unless set). Firefox, the Instagram and Reddit apps, other browsers, the Play Store, OwnDroid, Watch Limit and the phone's basics never count, so listing one can't switch the guards off.
 
@@ -54,7 +54,7 @@ Feed Guard can't tell when the bank app closes: the part of it that watches the 
 
 ## What it reads
 
-Firefox's windows: the address bar and the page's accessibility tree. That's the same information a screen reader gets. For every other window it reads only which app it belongs to, to know when a map is the only thing on screen. It stores the last time it saw the add-on and the address bar, the list of apps it paused, and the signature fingerprints of listed apps. Nothing leaves the phone, and the app has no internet permission.
+Firefox's windows: the address bar and the page's accessibility tree. That's the same information a screen reader gets. For every other window it reads only which app it belongs to, to know when a map is the only thing on screen. It stores the last time it saw the add-on and the address bar, the list of apps it paused and when they were installed, and the signature fingerprints of listed apps. Nothing leaves the phone, and the app has no internet permission.
 
 The status screen shows what it last saw in Firefox: the page's host (never the full address), whether the marker was there, and whether the page was covered. If something doesn't work, a screenshot of that screen is the quickest way to find out why.
 
@@ -110,7 +110,7 @@ OwnDroid › Applications › Feed Guard › **Managed configuration**. A settin
 - **Browsers built into other apps.** Telegram, Messenger and similar apps have their own in-app browsers. Feed Guard doesn't watch them. Instagram there means logging in again each time, which is slow, but possible. With "Only apps on the list" on, this only matters for listed apps, Telegram above all.
 - **Apps Android won't let it pause:** the Play Store, the default home screen and phone app, and apps that are device admins. The status screen lists any it tried.
 - **A split second of colour.** Leaving a map for another app can show that app in colour for a moment before the grey comes back.
-- **Banking mode's 10 minutes.** While it's on, nothing watches the screen. Firefox and the YouTube apps are paused, but an app installed meanwhile can open until the next 20-second check pauses it.
+- **Banking mode's 10 minutes.** While it's on, nothing watches the screen. Firefox and the YouTube apps are paused, but an app installed meanwhile, or uninstalled and installed again, can open until the next 20-second check pauses it.
 - **OwnDroid's code and a factory reset.** Both undo everything, on purpose.
 - **A future Firefox redesign.** If Firefox changes its address bar, Feed Guard warns you that it can't read it and falls back to page titles. That still catches the Instagram and Reddit home feeds, but not every page. It then needs an update.
 - **Speed.** Any accessibility service makes Firefox turn on its accessibility support, which costs a little speed on heavy pages. Watch Limit does the same.

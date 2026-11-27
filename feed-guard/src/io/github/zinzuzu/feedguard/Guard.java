@@ -37,6 +37,7 @@ final class Guard {
     static final String K_LAST_COVER_AT = "lastCoverAt";     // wall-clock ms
     static final String K_HANDLED = "handledPackages";       // apps already dealt with; not paused again unless reinstalled
     static final String K_OURS = "pausedByGuard";            // apps Feed Guard itself paused
+    static final String K_INSTALL_TIMES = "installTimes";    // "package=ms": when the apps in the two above were first installed, to spot a reinstall
     static final String K_FIREFOX_PAUSED = "firefoxPaused";  // Feed Guard paused Firefox because its access was off
     static final String K_UNPAUSABLE = "unpausable";         // apps a rule wants paused that Android refused to pause
     static final String K_PINS = "signaturePins";            // "package=sha256" for listed apps you installed (see Pins)
