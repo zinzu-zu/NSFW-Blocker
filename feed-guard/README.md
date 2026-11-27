@@ -26,7 +26,7 @@ It never lifts a pause it didn't make, so it can't undo a pause set in OwnDroid 
 These need the **secure settings permission** (`WRITE_SECURE_SETTINGS`), which only adb can give. Feed Guard uses it for two settings and nothing else: colour correction, and the list of switched-on accessibility services, where it touches only its own entry and, for banking mode (0.3.0), Watch Limit's.
 
 - **Black and white.** Feed Guard sets Android's colour correction to Grayscale and puts it back within a moment if anything changes it: the Quick Settings tile, the accessibility shortcut, Settings. Colour comes back only while nothing but a colour app is on screen, by default Google Maps, CoMaps or Organic Maps. Open the keyboard, pull down the shade, lock the phone or switch to any other app, and it's black and white again. When in doubt it chooses black and white. On by default once the permission is there.
-- **Only apps on your list.** Off by default. Turned on, it pauses every app with an icon in the app drawer and every app you installed yourself, unless it's on your list. The phone's basics are never paused: calls, texts, contacts, the clock, the keyboard, the file picker, settings, emergency info, OwnDroid and Watch Limit. Unlike the browser rule, this one keeps re-pausing: an app unpaused in OwnDroid, or by Watch Limit, is paused again within a second. A newly installed app is paused as soon as it's installed, so sideloading something doesn't get it past the list.
+- **Allowlist mode ("only apps on your list").** Off by default, which is blocklist mode: any app runs except other browsers, the Instagram and Reddit apps and the blocklist (`blocked_apps`). Turned on, it pauses every app with an icon in the app drawer and every app you installed yourself, unless it's on your list. The phone's basics are never paused: calls, texts, contacts, the clock, the keyboard, the file picker, settings, emergency info, OwnDroid and Watch Limit. Unlike the browser rule, this one keeps re-pausing: an app unpaused in OwnDroid, or by Watch Limit, is paused again within a second. A newly installed app is paused as soon as it's installed, so sideloading something doesn't get it past the list.
 - **The list is pinned to signatures.** For each listed app you installed yourself, Feed Guard remembers the certificate it was signed with. If that app is later replaced by one with the same name but a different signer, such as a browser repackaged as `com.whatsapp`, it doesn't count as listed. To accept a new copy, take it off the list, save, and put it back.
 - **Switching it off doesn't stick.** If its accessibility access is switched off, Feed Guard switches it straight back on, and checks again a few seconds later and every 15 minutes. Without the permission it falls back to the old dead-man switch and pauses Firefox.
 - **It points out holes.** The status screen lists apps Android won't let it pause, listed apps that aren't the copy that was listed, and any other app holding the secure settings permission, since that permission can switch Private DNS off.
@@ -83,11 +83,11 @@ OwnDroid › Applications › Feed Guard › **Managed configuration**. A settin
 
 | Setting | Key | Default | What it does |
 |---|---|---|---|
-| Apps to leave alone (your list) | `allowed_apps` | empty | Package names, separated by commas. Never paused; Feed Guard lifts its own pause on them. With "Only apps on the list" on, these are the only apps that open. |
-| Only apps on the list | `only_listed_apps` | off | Pause every app that isn't on the list, apart from the basics. |
+| Allowlist: apps never paused | `allowed_apps` | empty | Package names, separated by commas. Never paused, browsers included; Feed Guard lifts its own pause on them. In allowlist mode, these are the only apps that open. |
+| Allowlist mode (only listed apps open) | `only_listed_apps` | off | Off is blocklist mode: any app runs except other browsers, the Instagram and Reddit apps and the blocklist. On pauses every app that isn't on the allowlist, apart from the basics. |
 | Black and white | `grayscale` | on | Keep the screen black and white (needs the secure settings permission). Turned off here, Feed Guard gives colour back once and leaves colour correction to you. |
 | Apps shown in colour | `color_apps` | Google Maps, CoMaps, Organic Maps | Package names. Write `none` for no colour at all. |
-| Extra apps to pause | `blocked_apps` | empty | More package names, paused like browsers. |
+| Blocklist: apps always paused | `blocked_apps` | empty | More package names, paused like browsers unless they're on the allowlist. |
 | Morning news block | `news_block` | on | Turn news off for a while after the phone has been left alone overnight. |
 | Hours left alone | `news_gap_hours` | 6 | Hours untouched that count as a night's sleep (1 to 23). |
 | From hour, until hour | `news_from_hour`, `news_until_hour` | 6, 12 | The first unlock counts only from this hour and before that one (0 to 23). |
@@ -96,11 +96,11 @@ OwnDroid › Applications › Feed Guard › **Managed configuration**. A settin
 | News apps | `news_apps` | the list above | Package names. Apps in Android's news category are paused too. |
 | Bank apps (banking mode) | `bank_apps` | Nubank (`com.nu.production`) | Package names. While one of these opens, Feed Guard and Watch Limit switch off for 10 minutes (see Banking mode). Write `none` to turn banking mode off. |
 
-### Turning on "Only apps on the list"
+### Turning on allowlist mode
 
 1. **Install everything you want to keep first**, while it can still open: banking, authenticator, maps, messengers. An app installed after the list is on gets paused on arrival, and its signature is pinned the moment it's added to the list.
-2. **Build the list.** Open Feed Guard › **Pick apps for your list**, tick the apps and tap **Copy**. It copies their package names; it doesn't change anything by itself. Don't forget your authenticator, banking apps, a file manager (to open APKs you sideload) and the camera if you want one. The basics never need listing.
-3. **In OwnDroid's managed configuration for Feed Guard**, paste into **Apps to leave alone**, turn on **Only apps on the list**, and save. Feed Guard pauses everything else within a second and lists it on its status screen, with package names, in case something you need is missing.
+2. **Build the list.** Open Feed Guard › **Pick apps for your allowlist**, tick the apps and tap **Copy**. It copies their package names; it doesn't change anything by itself. Don't forget your authenticator, banking apps, a file manager (to open APKs you sideload) and the camera if you want one. The basics never need listing.
+3. **In OwnDroid's managed configuration for Feed Guard**, paste into **Allowlist: apps never paused**, turn on **Allowlist mode**, and save. Feed Guard pauses everything else within a second and lists it on its status screen, with package names, in case something you need is missing.
 4. **The Play Store can't be paused.** Android keeps it unpausable because it checks app installs. If you don't want it, hide it in OwnDroid › Applications. You then update your apps by sideloading. If you keep it, anything installed from it is paused on arrival, and your listed apps keep getting updates.
 5. **Lock the defaults.** Android won't let any app pause the default home screen or phone app, so a sideloaded app made the default would get past the list. If OwnDroid offers the restriction **Config default apps** (Android 14 and newer), turn it on once Firefox, your launcher and your phone app are set as defaults.
 

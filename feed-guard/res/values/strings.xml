@@ -6,16 +6,16 @@
     <string name="bank_shortcut">Open bank app</string>
     <string name="r_bank_title">Bank apps (banking mode)</string>
     <string name="r_bank_desc">Package names, separated by commas. Bank apps refuse to open while Feed Guard and Watch Limit are on. While one of these opens, Feed Guard switches both off for 10 minutes, with Firefox and YouTube paused meanwhile, then switches them back on. Unset, it\'s Nubank. Write none to turn banking mode off.</string>
-    <string name="r_allowed_title">Apps to leave alone (your list)</string>
-    <string name="r_allowed_desc">Package names, separated by commas. Feed Guard never pauses these and lifts its own pause on them. With \u201cOnly apps on the list\u201d on, these are the only apps that open. Feed Guard\'s \u201cPick apps for your list\u201d button copies names to paste here.</string>
-    <string name="r_list_title">Only apps on the list</string>
-    <string name="r_list_desc">Pause every app that isn\'t on the list above, apart from the phone\'s basics: calls, texts, contacts, the clock, the keyboard, settings and OwnDroid. Fill in the list first.</string>
+    <string name="r_allowed_title">Allowlist: apps never paused</string>
+    <string name="r_allowed_desc">Package names, separated by commas. Feed Guard never pauses these, browsers included, and lifts its own pause on them. In allowlist mode (below), these are the only apps that open. Feed Guard\'s \u201cPick apps for your allowlist\u201d button copies names to paste here.</string>
+    <string name="r_list_title">Allowlist mode (only listed apps open)</string>
+    <string name="r_list_desc">Off (blocklist mode): any app runs, except other browsers, the Instagram and Reddit apps, and the apps on the blocklist. On: every app that isn\'t on the allowlist above is paused, apart from the phone\'s basics: calls, texts, contacts, the clock, the keyboard, settings and OwnDroid. Fill in the allowlist first.</string>
     <string name="r_gray_title">Black and white</string>
     <string name="r_gray_desc">Keep the screen black and white, except while only a colour app is on screen. Needs the secure settings permission, given over adb. On unless turned off here.</string>
     <string name="r_color_title">Apps shown in colour</string>
     <string name="r_color_desc">Package names, separated by commas. Unset, it\'s Google Maps, CoMaps and Organic Maps. Write none for no colour at all.</string>
-    <string name="r_blocked_title">Extra apps to pause</string>
-    <string name="r_blocked_desc">Package names, separated by commas. Paused like other browsers.</string>
+    <string name="r_blocked_title">Blocklist: apps always paused</string>
+    <string name="r_blocked_desc">Package names, separated by commas. Always paused, like other browsers, unless they\'re also on the allowlist.</string>
     <string name="r_news_title">Morning news block</string>
     <string name="r_news_desc">After the phone has been left alone overnight, the first unlock in the morning turns news off for a while: news sites are covered in Firefox and news apps are paused. On unless turned off here.</string>
     <string name="r_news_gap_title">Morning news block: hours left alone</string>
@@ -29,5 +29,5 @@
     <string name="r_news_sites_title">Morning news block: sites</string>
     <string name="r_news_sites_desc">Web addresses, separated by commas. Each covers its subdomains too, so globo.com covers g1.globo.com. Unset, it\'s Feed Guard\'s list of Brazilian and international news sites. Write none for no sites.</string>
     <string name="r_news_apps_title">Morning news block: apps</string>
-    <string name="r_news_apps_desc">Package names, separated by commas. Paused during the block, even if they\'re on your list. Apps that call themselves news apps are paused too. Unset, it\'s Feed Guard\'s list (Google News, g1, CNN, BBC News and others, plus YouTube ReVanced). Write none for only the apps that call themselves news apps.</string>
+    <string name="r_news_apps_desc">Package names, separated by commas. Paused during the block, even if they\'re on your allowlist. Apps that call themselves news apps are paused too. Unset, it\'s Feed Guard\'s list (Google News, g1, CNN, BBC News and others, plus YouTube ReVanced). Write none for only the apps that call themselves news apps.</string>
 </resources>

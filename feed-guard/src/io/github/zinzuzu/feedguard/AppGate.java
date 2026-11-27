@@ -473,7 +473,7 @@ final class AppGate {
             if (!allNews) Guard.notify(c, Guard.N_APPS_PAUSED,
                     pausedNow.size() <= 4 ? "Paused " + Guard.labels(c, pausedNow) : "Paused " + pausedNow.size() + " apps",
                     fromList
-                            ? "Only the apps on your list open. Apps go on the list in OwnDroid's settings for Feed Guard."
+                            ? "Only the apps on your allowlist open. Apps go on the allowlist in OwnDroid's settings for Feed Guard."
                             : "Only Firefox, with the add-on, can show Instagram and Reddit. Other browsers and the Instagram and Reddit apps stay paused.",
                     status);
         }
@@ -489,8 +489,8 @@ final class AppGate {
         Set<String> strangers = new TreeSet<>(notSameApp);
         strangers.removeAll(notSameBefore);
         if (!strangers.isEmpty()) {
-            Guard.notify(c, Guard.N_NOT_SAME_APP, Guard.labels(c, strangers) + " isn't the copy on your list",
-                    "It's signed by someone other than the copy that was on your list, so it counts as not listed. "
+            Guard.notify(c, Guard.N_NOT_SAME_APP, Guard.labels(c, strangers) + " isn't the copy on your allowlist",
+                    "It's signed by someone other than the copy that was on your allowlist, so it counts as not listed. "
                             + "To accept this copy, take it off the list in OwnDroid, save, then put it back.",
                     status);
         }

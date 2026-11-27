@@ -10,13 +10,15 @@
 # Setup › Android › Private DNS. The kit sets Private DNS to it and locks it.
 NEXTDNS_HOST=abc123.dns.nextdns.io
 
-# Apps Feed Guard never pauses: its "Apps to leave alone". Firefox needn't be
-# listed. Browsers and Instagram or Reddit apps can't be on it.
+# Allowlist: apps Feed Guard never pauses (its "Allowlist: apps never
+# paused"). Firefox needn't be listed. Browsers and Instagram or Reddit apps can't be on it.
 # For example:
 # APP_LIST=com.whatsapp, org.telegram.messenger, com.anthropic.claude, com.google.android.apps.translate, com.google.android.calculator
 APP_LIST=
 
-# yes: every app that isn't on APP_LIST is paused, apart from the phone's
+# no = blocklist mode: any app runs, except other browsers, the Instagram and
+# Reddit apps, and BLOCK_APPS.
+# yes = allowlist mode: every app that isn't on APP_LIST is paused, apart from the phone's
 # basics (calls, messages, contacts, clock, keyboard, Settings) and Firefox.
 # Install the apps you want to keep before you set this up: an app installed
 # later is paused until it's on the list.
@@ -29,7 +31,7 @@ BLACK_AND_WHITE=yes
 # Organic Maps). none: no colour at all.
 COLOR_APPS=
 
-# More apps to pause, as Feed Guard pauses other browsers.
+# Blocklist: more apps to pause, as Feed Guard pauses other browsers.
 BLOCK_APPS=
 
 # Apps OwnDroid hides, so they're gone from the phone until OwnDroid shows them
