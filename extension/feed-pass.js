@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: the feed pass, shared by instagram.js and facebook.js.
+// NSFW Blocker: the feed pass, shared by instagram.js and facebook.js.
 // Once every 14 days you can open the Instagram and Facebook feeds for 10
 // minutes, whenever you choose. background.js keeps the rule and the start
 // time (in the add-on's own storage, which the lock keeps); this file only

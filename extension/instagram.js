@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: Instagram home feed.
+// NSFW Blocker: Instagram home feed.
 // Covers the endless feeds (home, Explore, the Reels tab, hashtag and place
 // grids) with a full-screen panel and leaves profiles, single posts and reels,
 // stories, search and messages working. The cover doesn't depend on

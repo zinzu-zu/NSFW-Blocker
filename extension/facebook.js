@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: Facebook news feed.
+// NSFW Blocker: Facebook news feed.
 // Covers the endless feeds (the home feed, Watch, the Reels tab and the groups
 // feed) with a full-screen panel, and leaves messages, groups, profiles, pages,
 // notifications, search and single posts or videos working. Like instagram.js,

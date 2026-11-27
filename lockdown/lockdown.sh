@@ -1,5 +1,5 @@
 #!/bin/bash
-# Reddit NSFW Blocker lock-down for macOS.
+# NSFW Blocker lock-down for macOS.
 # Run from Terminal:  sudo bash lockdown.sh
 # Builds one configuration profile that force-installs the extension in
 # Firefox (and Edge, if published there), blocks Reddit, Instagram and
@@ -11,8 +11,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
-LIB="/Library/Application Support/RedditNSFWBlocker"
-OUT="$HERE/RedditNSFWBlocker.mobileconfig"
+LIB="/Library/Application Support/nsfw-blocker"
+OUT="$HERE/nsfw-blocker.mobileconfig"
 FF_ID="reddit-nsfw-blocker@self-hosted"
 
 if [[ $EUID -ne 0 && -z "${DRY_RUN:-}" ]]; then
@@ -20,19 +20,23 @@ if [[ $EUID -ne 0 && -z "${DRY_RUN:-}" ]]; then
 fi
 
 # --- Firefox: listed add-on on addons.mozilla.org, or a self-signed .xpi ---
-read -r -p "Firefox add-on slug on addons.mozilla.org (Enter to use reddit-nsfw-blocker.xpi from this folder): " SLUG
+# shellcheck source=newest-xpi.sh
+. "$HERE/newest-xpi.sh"
+XPI="$(newest_xpi "$ROOT")"
+read -r -p "Firefox add-on slug on addons.mozilla.org (Enter to use the signed .xpi in the blocker folder): " SLUG
 if [[ -n "$SLUG" && ! "$SLUG" =~ ^[A-Za-z0-9_-]{1,100}$ ]]; then
   echo "That doesn't look like an add-on name (letters, numbers, - and _ only)."; exit 1
 fi
 if [[ -n "$SLUG" ]]; then
   FF_URL="https://addons.mozilla.org/firefox/downloads/latest/$SLUG/latest.xpi"
-elif [[ -f "$ROOT/reddit-nsfw-blocker.xpi" ]]; then
+elif [[ -n "$XPI" ]]; then
+  echo "Using $(basename "$XPI") (version $(xpi_version "$XPI"))."
   if [[ -z "${DRY_RUN:-}" ]]; then
-    mkdir -p "$LIB"; cp "$ROOT/reddit-nsfw-blocker.xpi" "$LIB/"; chown -R root:wheel "$LIB"; chmod -R go-w "$LIB"
+    mkdir -p "$LIB"; cp "$XPI" "$LIB/nsfw-blocker.xpi"; chown -R root:wheel "$LIB"; chmod -R go-w "$LIB"
   fi
-  FF_URL="file:///Library/Application%20Support/RedditNSFWBlocker/reddit-nsfw-blocker.xpi"
+  FF_URL="file:///Library/Application%20Support/nsfw-blocker/nsfw-blocker.xpi"
 else
-  echo "No slug and no reddit-nsfw-blocker.xpi next to README.md. See step 1 in the README."; exit 1
+  echo "No slug, and no add-on signed by Mozilla (.xpi) in $ROOT. See step 1 in the README."; exit 1
 fi
 
 # --- Chromium browsers ---
@@ -104,8 +108,10 @@ cat > "$OUT" <<EOF2
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>PayloadDisplayName</key><string>Reddit NSFW Blocker</string>
-  <key>PayloadDescription</key><string>Keeps the Reddit NSFW Blocker installed in every browser.</string>
+  <key>PayloadDisplayName</key><string>NSFW Blocker</string>
+  <key>PayloadDescription</key><string>Keeps the NSFW Blocker installed in every browser.</string>
+  <!-- The identifier keeps the old name, so this profile replaces the one
+       installed before the rename instead of adding a second lock. -->
   <key>PayloadIdentifier</key><string>local.redditnsfwblocker</string>
   <key>PayloadUUID</key><string>$(u)</string>
   <key>PayloadType</key><string>Configuration</string>
@@ -156,5 +162,5 @@ if command -v plutil >/dev/null; then plutil -lint "$OUT"; fi
 echo
 echo "Profile written to $OUT"
 echo "Opening it now. Then go to System Settings > General > Device Management"
-echo "(or Privacy & Security > Profiles), click Reddit NSFW Blocker, and Install."
+echo "(or Privacy & Security > Profiles), click NSFW Blocker, and Install."
 if [[ -z "${DRY_RUN:-}" ]]; then open "$OUT"; fi

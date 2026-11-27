@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         TextView title = text("Feed Guard", 24);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         list.addView(title);
-        list.addView(text("Instagram and Reddit only open in Firefox while the Reddit NSFW Blocker add-on is running on the page. "
+        list.addView(text("Instagram and Reddit only open in Firefox while the NSFW Blocker add-on is running on the page. "
                 + "Other browsers, and the Instagram and Reddit apps, are paused when they're installed."
                 + (cfg.listMode ? " Allowlist mode: only the apps on your allowlist open."
                         : " Blocklist mode: other apps run, except the ones on your blocklist.")

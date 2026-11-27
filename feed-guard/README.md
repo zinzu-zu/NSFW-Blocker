@@ -1,6 +1,6 @@
 # Feed Guard
 
-A small Android app that makes the Reddit NSFW Blocker add-on pointless to switch off on the phone.
+A small Android app that makes the NSFW Blocker add-on pointless to switch off on the phone.
 
 Firefox for Android has no way to lock an add-on: anyone can turn it off in a few taps. Feed Guard closes that gap. **Instagram and Reddit only open in Firefox while the add-on is running on the page.** Turn the add-on off, remove it, or open those sites in a private tab where it isn't allowed, and Feed Guard covers the page within a few seconds.
 

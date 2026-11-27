@@ -1,4 +1,4 @@
-// Reddit NSFW Blocker: content script for new Reddit (shreddit) and old Reddit.
+// NSFW Blocker: content script for new Reddit (shreddit) and old Reddit.
 // Hides every post Reddit flags as NSFW, plus posts from subreddits whose
 // about.json says over18 even when the post itself wasn't tagged.
 (() => {

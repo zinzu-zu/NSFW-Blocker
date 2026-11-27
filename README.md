@@ -1,4 +1,4 @@
-# Reddit NSFW Blocker
+# NSFW Blocker
 
 A browser extension for Firefox (Mac and Android) and Edge that keeps adult content off Reddit, plus files to lock it so it can't be switched off on a whim.
 
@@ -35,7 +35,7 @@ The lock is one macOS configuration profile, installed at the system level, so o
 **1. Get the Firefox add-on signed by Mozilla.** It's free. Firefox only installs signed add-ons.
 - Go to [addons.mozilla.org/developers](https://addons.mozilla.org/developers/addon/submit/distribution) and upload `extension-upload.zip`.
 - Choose **On this site**. That lists the add-on publicly, which you need for Firefox on Android, and gives you a short name ("slug") for its page. The listed version goes through Mozilla's review first.
-- If you only want it on the Mac, choose **On your own** instead. Signing is then automatic. Download the signed `.xpi`, rename it `reddit-nsfw-blocker.xpi`, and put it next to this README.
+- If you only want it on the Mac, choose **On your own** instead. Signing is then automatic. Download the signed `.xpi` and put it next to this README. Its file name doesn't matter: the scripts use the signed `.xpi` with the highest version.
 
 **2. (Optional, free) Publish to Microsoft Edge Add-ons, if you want Reddit filtered in Edge rather than blocked.**
 - Upload `extension-upload.zip` at [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/overview). There's no fee.
@@ -44,8 +44,8 @@ The lock is one macOS configuration profile, installed at the system level, so o
 **3. Build and install the profile.**
 - Open Terminal in the `lockdown` folder and run `sudo bash lockdown.sh`.
 - Enter the add-on slug, or press Enter to use the `.xpi`. Then enter the Edge Add-ons ID, or press Enter to skip.
-- The script writes `RedditNSFWBlocker.mobileconfig` and opens it.
-- Go to **System Settings > General > Device Management** (on older macOS, Privacy & Security > Profiles), select **Reddit NSFW Blocker** and click **Install**.
+- The script writes `nsfw-blocker.mobileconfig` and opens it.
+- Go to **System Settings > General > Device Management** (on older macOS, Privacy & Security > Profiles), select **NSFW Blocker** and click **Install**.
 
 **4. Check it worked.** Quit and reopen your browsers.
 - In Firefox, `about:policies` should list the policies, and on `about:addons` the blocker should have no Remove option.
@@ -79,7 +79,7 @@ If you installed the lock before Safari was part of it, you install the profile 
 1. Back up the current folder first: copy everything except `previous-builds` into `previous-builds/nsfw-blocker-<YYYY-MM-DD-HHMM>` inside the blocker's folder.
 2. Replace `lockdown/lockdown.sh` and `README.md` in the blocker's folder with the new ones.
 3. Your friend runs `sudo bash lockdown.sh` in the `lockdown` folder and gives the same answers as last time (the add-on slug, or Enter for the `.xpi`).
-4. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
+4. In **System Settings > General > Device Management**, click **NSFW Blocker** and **Install**, and your friend enters the admin password.
 5. Quit Safari and Firefox with Cmd+Q, open them again, and do the checks in step 4 of the setup.
 6. If you'd set Limit Adult Websites in Screen Time before, you can leave it; the profile does the same job and can't be reset with your Apple Account.
 
@@ -91,16 +91,20 @@ Version 1.3.0 hides Facebook's feed in Firefox. To also block facebook.com in Sa
 2. Replace `extension/`, `lockdown/lockdown.sh`, `extension-upload.zip` and `README.md` in the blocker's folder with the new ones.
 3. Sign 1.3.0 and install it as in "Updating a locked Mac" below.
 4. Run `sudo bash lockdown.sh` in the `lockdown` folder, give the same answers as last time, and type the admin password. From 1.4.0 it no longer asks about Instagram or Facebook: they're always blocked outside Firefox.
-5. In **System Settings > General > Device Management**, click **Reddit NSFW Blocker** and **Install**, and your friend enters the admin password.
+5. In **System Settings > General > Device Management**, click **NSFW Blocker** and **Install**, and your friend enters the admin password.
 6. Quit Safari, Chrome and Firefox with Cmd+Q and open them again. In Firefox, facebook.com should show "The feed is turned off", and facebook.com/messages should open. In Safari, facebook.com should show "You cannot browse this page".
+
+## After the rename to NSFW Blocker (1.4.2)
+
+The add-on, the lock profile and their files are now called NSFW Blocker / `nsfw-blocker`. The locked add-on now lives in `/Library/Application Support/nsfw-blocker`, so run `sudo bash lockdown.sh` once and install the profile, as in "Adding Facebook" step 4 and 5. Until then `update.sh` says the lock still uses its old name. The new profile replaces the old one, because its hidden identifier didn't change. The add-on's ID (`reddit-nsfw-blocker@self-hosted`) didn't change either, so Firefox and addons.mozilla.org treat it as the same add-on.
 
 ## Updating a locked Mac
 
 1. Sign the new version. On your add-on's page at addons.mozilla.org, click **Upload New Version**, choose **On your own**, and upload the new `extension-upload.zip`.
-2. Download the signed `.xpi`, rename it `reddit-nsfw-blocker.xpi`, and put it next to this README, replacing the old one.
+2. Download the signed `.xpi` and put it next to this README. Any name works: `update.sh` picks the signed `.xpi` with the highest version.
 3. Run `sudo bash update.sh` from the `lockdown` folder. This needs the admin password.
 4. Quit Firefox with Cmd+Q and open it again. Firefox picks up the newer version from the locked folder.
 
 ## Undo (for the admin)
 
-On the Mac, go to System Settings > General > Device Management, remove **Reddit NSFW Blocker**, and enter the admin password. Then delete `/Library/Application Support/RedditNSFWBlocker`, if it exists. On Android, reverse the settings above.
+On the Mac, go to System Settings > General > Device Management, remove **NSFW Blocker**, and enter the admin password. Then delete `/Library/Application Support/nsfw-blocker` and, from before the rename, `/Library/Application Support/RedditNSFWBlocker`, if they exist. On Android, reverse the settings above.
