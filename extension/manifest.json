@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Reddit NSFW Blocker",
-  "version": "1.2.0",
-  "description": "Blocks adult-only subreddits, hides NSFW posts and the Reddit home feed, hides the Instagram feed, and blocks adult media hosts.",
+  "version": "1.3.0",
+  "description": "Blocks adult-only subreddits, hides NSFW posts and the Reddit home feed, hides the Instagram and Facebook feeds, and blocks adult media hosts.",
   "permissions": [
     "storage",
     "tabs",
@@ -12,6 +12,7 @@
     "*://*.reddit.com/*",
     "*://*.redd.it/*",
     "*://*.instagram.com/*",
+    "*://*.facebook.com/*",
     "*://*.redgifs.com/*",
     "*://*.erome.com/*",
     "*://*.pornhub.com/*",
@@ -77,6 +78,18 @@
       "css": [
         "instagram.css",
         "guard-marker.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.facebook.com/*"
+      ],
+      "js": [
+        "facebook.js"
+      ],
+      "css": [
+        "facebook.css"
       ],
       "run_at": "document_start"
     }
