@@ -64,7 +64,7 @@ Do this during the OwnDroid setup in the "Tighter Android lock" guide. **Install
 
 1. **Install it from your Mac**, while USB debugging is still on, and give it the secure settings permission:
    ```
-   adb install -r FeedGuard-0.4.0.apk
+   adb install -r FeedGuard-0.4.1.apk
    adb shell pm grant io.github.zinzuzu.feedguard android.permission.WRITE_SECURE_SETTINGS
    ```
    Installing over adb avoids Android's "restricted setting" block on accessibility for downloaded apps, and Google's sideloading checks. The screen turns black and white once step 2 below is done.
