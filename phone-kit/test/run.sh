@@ -234,6 +234,10 @@ check "indented list lines: checked like the rest" said 'BLOCK_APPS has "Not"'
 printf '%s\n' "    com.example.a" "NEXTDNS_HOST=my1234.dns.nextdns.io" > "$PHONE_KIT_CONF"
 kit "" setup
 check "an indented line before any setting: refused" said "line 1: expected NAME=value"
+printf '%s\n' "NEXTDNS_HOST=my1234.dns.nextdns.io" "BLOCK_APPS=" "    com.example.a   # A" "com.example.b # B" "" \
+  "com.example.c" "BLACK_AND_WHITE=yes" > "$PHONE_KIT_CONF"
+PHONE_KIT_TEST_ONCE=1 kit "" check
+check "list lines that aren't indented: read too" said "Phone: Pixel 6a, Android 16."
 
 echo "--- Finding the phone ---"
 
