@@ -281,6 +281,13 @@ public final class MainActivity extends Activity {
         List<String> apps = new ArrayList<>(NewsBlock.installedNewsApps(cfg, getPackageManager().getInstalledApplications(0)));
         Collections.sort(apps);
         String appsText = apps.isEmpty() ? "No news apps are installed." : "News apps: " + Guard.labels(this, apps) + ".";
+        // The last unlock and what it led to, so a morning without the block can be explained.
+        SharedPreferences p = Guard.prefs(this);
+        long lastAt = p.getLong(NewsBlock.K_LAST_UNLOCK_WALL, 0);
+        appsText += lastAt > 0
+                ? "\nLast unlock: " + when(lastAt) + ", " + NewsRules.whyText(p.getInt(NewsBlock.K_LAST_RESULT, 0),
+                        p.getLong(NewsBlock.K_LAST_GAP, -1), cfg.newsGapHours, hour(cfg.newsFromHour), hour(cfg.newsUntilHour))
+                : "\nNo unlock seen yet.";
         if (until > 0) {
             row(true, "Morning news block",
                     "On until " + NewsBlock.time(this, until) + ". News sites are covered in Firefox and news apps are paused. "

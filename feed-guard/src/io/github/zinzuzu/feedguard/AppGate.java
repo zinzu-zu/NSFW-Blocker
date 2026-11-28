@@ -465,14 +465,18 @@ final class AppGate {
         if (!pausedNow.isEmpty()) {
             boolean fromList = false;
             boolean allNews = true;
+            boolean allTor = true;
             for (String pkg : pausedNow) {
-                if (!plan.browserRule.contains(pkg) && !plan.newsRule.contains(pkg)) fromList = true;
+                if (plan.listRule.contains(pkg) && !plan.browserRule.contains(pkg)) fromList = true;
                 if (!plan.newsRule.contains(pkg)) allNews = false;
+                if (!plan.torRule.contains(pkg)) allTor = false;
             }
             // Only news apps: the morning news block's own notification already says why.
             if (!allNews) Guard.notify(c, Guard.N_APPS_PAUSED,
                     pausedNow.size() <= 4 ? "Paused " + Guard.labels(c, pausedNow) : "Paused " + pausedNow.size() + " apps",
-                    fromList
+                    allTor
+                            ? "Tor Browser stays paused for good: it gets past NextDNS and every filter on the phone."
+                            : fromList
                             ? "Only the apps on your allowlist open. Apps go on the allowlist in OwnDroid's settings for Feed Guard."
                             : "Only Firefox, with the add-on, can show Instagram and Reddit. Other browsers and the Instagram and Reddit apps stay paused.",
                     status);

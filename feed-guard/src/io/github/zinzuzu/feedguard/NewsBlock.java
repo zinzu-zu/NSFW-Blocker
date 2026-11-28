@@ -34,6 +34,10 @@ final class NewsBlock {
     static final String K_BASE_BOOT = "newsBaseBoot";
     static final String K_BASE_AT = "newsBaseAt";            // SystemClock.elapsedRealtime() ms of that count
     static final String K_STARTED_WALL = "newsStartedWall";  // wall-clock ms it started, for what's shown
+    // The last unlock and what it led to, for the status screen.
+    static final String K_LAST_UNLOCK_WALL = "newsLastUnlockWall";
+    static final String K_LAST_GAP = "newsLastGap";          // ms left alone before it; -1 if unknown
+    static final String K_LAST_RESULT = "newsLastResult";    // NewsRules.STARTED, or why not
 
     static final int N_NEWS = 8;
 
@@ -74,8 +78,10 @@ final class NewsBlock {
         long gap = NewsRules.gapMs(p.getLong(K_PUT_DOWN_BOOT, NewsRules.UNKNOWN_BOOT), p.getLong(K_PUT_DOWN_AT, 0),
                 p.getLong(K_PUT_DOWN_WALL, 0), nowBoot, now, wall);
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        boolean start = cfg.newsBlock && !active(c)
-                && NewsRules.wokeUp(gap, cfg.newsGapHours, hour, cfg.newsFromHour, cfg.newsUntilHour);
+        int result = NewsRules.decide(cfg.newsBlock, active(c), gap, cfg.newsGapHours, hour,
+                cfg.newsFromHour, cfg.newsUntilHour);
+        boolean start = result == NewsRules.STARTED;
+        e.putLong(K_LAST_UNLOCK_WALL, wall).putLong(K_LAST_GAP, gap).putInt(K_LAST_RESULT, result);
         if (start) {
             e.putBoolean(K_ON, true)
                     .putLong(K_LENGTH, cfg.newsMinutes * 60_000L)

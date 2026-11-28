@@ -146,9 +146,50 @@ final class NewsRules {
         return hour >= from || hour < until; // a window across midnight
     }
 
+    // What an unlock led to, kept for the status screen (see whyText).
+    static final int STARTED = 1;
+    static final int TURNED_OFF = 2;
+    static final int ALREADY_ON = 3;
+    static final int NEVER_PUT_DOWN = 4;
+    static final int TOO_SHORT = 5;
+    static final int NOT_MORNING = 6;
+
+    /** What this unlock leads to: STARTED, or why not. */
+    static int decide(boolean newsBlock, boolean alreadyOn, long gapMs, int gapHours, int hour, int from, int until) {
+        if (!newsBlock) return TURNED_OFF;
+        if (alreadyOn) return ALREADY_ON;
+        if (gapMs < 0) return NEVER_PUT_DOWN;
+        if (gapMs < gapHours * 3_600_000L) return TOO_SHORT;
+        if (!inWindow(hour, from, until)) return NOT_MORNING;
+        return STARTED;
+    }
+
+    /** "7 h 31 min", for the status screen. */
+    static String duration(long ms) {
+        long min = Math.max(0, ms) / 60_000L;
+        long h = min / 60;
+        long m = min % 60;
+        if (h == 0) return m + " min";
+        return m == 0 ? h + " h" : h + " h " + m + " min";
+    }
+
+    /** The status screen's sentence for the last unlock's outcome. */
+    static String whyText(int result, long gapMs, int gapHours, String from, String until) {
+        String left = gapMs >= 0 ? "after " + duration(gapMs) + " untouched" : "";
+        switch (result) {
+            case STARTED: return left + ": the block started.";
+            case TURNED_OFF: return left + ": nothing, the block is off in OwnDroid.";
+            case ALREADY_ON: return left + ": the block was already on.";
+            case NEVER_PUT_DOWN: return "Feed Guard hadn't seen the phone put down yet, so it couldn't tell how long it was left alone.";
+            case TOO_SHORT: return left + ": too short to count as a night (it needs " + gapHours + " h).";
+            case NOT_MORNING: return left + ", but outside " + from + " to " + until + ", so not counted as waking up.";
+            default: return "";
+        }
+    }
+
     /** Whether this unlock is waking up: left alone long enough, and in the morning window. */
     static boolean wokeUp(long gapMs, int gapHours, int hour, int from, int until) {
-        return gapMs >= 0 && gapMs >= gapHours * 3_600_000L && inWindow(hour, from, until);
+        return decide(true, false, gapMs, gapHours, hour, from, until) == STARTED;
     }
 
     /**
