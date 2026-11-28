@@ -36,6 +36,9 @@ public final class LogicTest {
         pins();
         newsRules();
         newsAppRule();
+        newsWhy();
+        newsReceiver();
+        torRule();
         System.out.println(passed + " passed, " + failed + " failed");
         if (failed > 0) System.exit(1);
     }
@@ -744,6 +747,55 @@ public final class LogicTest {
         check("block over: its pause is lifted", AppRules.plan(in).release.contains("com.globo.g1.app"));
         in.newsBlock = true;
         check("block on: its pause stays", !AppRules.plan(in).release.contains("com.globo.g1.app"));
+    }
+
+    static void newsWhy() {
+        eq("why: started", NewsRules.STARTED, NewsRules.decide(true, false, 7 * H, 6, 7, 6, 12));
+        eq("why: turned off", NewsRules.TURNED_OFF, NewsRules.decide(false, false, 7 * H, 6, 7, 6, 12));
+        eq("why: already on", NewsRules.ALREADY_ON, NewsRules.decide(true, true, 7 * H, 6, 7, 6, 12));
+        eq("why: never put down", NewsRules.NEVER_PUT_DOWN, NewsRules.decide(true, false, -1, 6, 7, 6, 12));
+        eq("why: too short", NewsRules.TOO_SHORT, NewsRules.decide(true, false, 5 * H, 6, 7, 6, 12));
+        eq("why: not the morning", NewsRules.NOT_MORNING, NewsRules.decide(true, false, 8 * H, 6, 14, 6, 12));
+        eq("duration, hours and minutes", "7 h 31 min", NewsRules.duration(7 * H + 31 * 60_000L));
+        eq("duration, whole hours", "6 h", NewsRules.duration(6 * H));
+        eq("duration, minutes", "45 min", NewsRules.duration(45 * 60_000L));
+        eq("why text: too short", "after 3 h 55 min untouched: too short to count as a night (it needs 6 h).",
+                NewsRules.whyText(NewsRules.TOO_SHORT, 3 * H + 55 * 60_000L, 6, "6:00", "12:00"));
+        check("why text: every result has one", !NewsRules.whyText(NewsRules.NOT_MORNING, H, 6, "6:00", "12:00").isEmpty()
+                && !NewsRules.whyText(NewsRules.STARTED, H, 6, "a", "b").isEmpty()
+                && !NewsRules.whyText(NewsRules.NEVER_PUT_DOWN, -1, 6, "a", "b").isEmpty());
+    }
+
+    /**
+     * The unlock broadcast comes from System UI, an ordinary app as far as Android
+     * is concerned: a not-exported receiver never gets it (why 0.4.0 to 0.4.4 never
+     * started the block). Checked in the source, since it can't run off the phone.
+     */
+    static void newsReceiver() {
+        String dir = System.getProperty("feedguard.dir");
+        if (dir == null) return;
+        String src = read(dir + "/src/io/github/zinzuzu/feedguard/GuardService.java");
+        check("unlock receiver is exported", src.contains("registerReceiver(screenReceiver, screen, Context.RECEIVER_EXPORTED)"));
+        check("unlock receiver listens for USER_PRESENT", src.contains("screen.addAction(Intent.ACTION_USER_PRESENT)"));
+        check("unlock has a safety net from accessibility events", src.contains("if (!unlockSeen) lookForUnlock();"));
+    }
+
+    static void torRule() {
+        check("Tor Browser is Tor", AppRules.isTorBrowser("org.torproject.torbrowser"));
+        check("Tor Browser alpha is Tor", AppRules.isTorBrowser("org.torproject.torbrowser_alpha"));
+        check("Orbot isn't a browser", !AppRules.isTorBrowser("org.torproject.android"));
+        AppRules.Inputs in = phone();
+        in.installed = new HashSet<>(in.installed);
+        in.installed.add("org.torproject.torbrowser");
+        in.allowed = set("org.torproject.torbrowser");
+        in.handled = set("org.torproject.torbrowser");
+        AppRules.Plan plan = AppRules.plan(in);
+        check("Tor: paused even when listed and already handled", plan.pause.contains("org.torproject.torbrowser"));
+        in.ours = set("org.torproject.torbrowser");
+        check("Tor: its pause is never lifted", !AppRules.plan(in).release.contains("org.torproject.torbrowser"));
+        in.allowed = set("org.torproject.torbrowser", "com.whatsapp");
+        in.extraBlocked = set("com.whatsapp");
+        check("Tor: the allowlist still wins for other apps", !AppRules.plan(in).pause.contains("com.whatsapp"));
     }
 
     // --- Harness -----------------------------------------------------------

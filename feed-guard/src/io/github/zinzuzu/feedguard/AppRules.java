@@ -24,6 +24,8 @@ import java.util.TreeSet;
  *   list is the only way to let an app run.
  * - The news rule, only during the morning news block (see NewsRules): news
  *   apps, even ones on the list. It lifts its pauses when the block ends.
+ * - The Tor rule, always on: Tor Browser, even on the list. It keeps
+ *   re-pausing, like the list rule: Tor gets past NextDNS and every filter.
  *
  * Pure Java, so it can be tested off the phone.
  */
@@ -88,6 +90,15 @@ final class AppRules {
             "com.onelouder.baconreader",
             "o.o.joey");
 
+    /** Tor Browser and its alpha and nightly builds: package names that start with this. */
+    static final String TOR_BROWSER_PREFIX = "org.torproject.torbrowser";
+    /** Older Tor browsers with other names: Orfox. */
+    static final Set<String> TOR_BROWSERS = set("info.guardianproject.orfox");
+
+    static boolean isTorBrowser(String pkg) {
+        return pkg != null && (pkg.startsWith(TOR_BROWSER_PREFIX) || TOR_BROWSERS.contains(pkg));
+    }
+
     /** Named like a feed app but left alone: Threads. */
     static final Set<String> NOT_FEED_APPS = set("com.instagram.barcelona");
 
@@ -136,6 +147,8 @@ final class AppRules {
         final Set<String> listRule = new TreeSet<>();
         /** Wanted paused by the news rule. */
         final Set<String> newsRule = new TreeSet<>();
+        /** Wanted paused by the Tor rule. */
+        final Set<String> torRule = new TreeSet<>();
         /** To pause now, unless something already paused them. */
         final Set<String> pause = new TreeSet<>();
         /** Feed Guard's own pauses that no rule wants any more. */
@@ -148,6 +161,8 @@ final class AppRules {
             if (pkg == null || ESSENTIAL.contains(pkg) || in.essential.contains(pkg)) continue;
             // The news hour holds even for listed apps: listing g1 is for the rest of the day.
             if (in.newsBlock && in.newsApps.contains(pkg) && !NOT_A_BROWSER.contains(pkg)) p.newsRule.add(pkg);
+            // Tor Browser holds even for listed apps, and is paused again if someone lifts it.
+            if (isTorBrowser(pkg)) p.torRule.add(pkg);
             if (in.allowed.contains(pkg)) continue;
             boolean browserLike = in.browsers.contains(pkg) || isFeedApp(pkg) || in.extraBlocked.contains(pkg);
             if (browserLike && !NOT_A_BROWSER.contains(pkg)) p.browserRule.add(pkg);
@@ -160,10 +175,11 @@ final class AppRules {
         }
         p.pause.addAll(p.listRule);
         p.pause.addAll(p.newsRule);
+        p.pause.addAll(p.torRule);
         p.pause.removeAll(in.skip);
         for (String pkg : in.ours) {
             if (in.installed.contains(pkg) && !p.browserRule.contains(pkg) && !p.listRule.contains(pkg)
-                    && !p.newsRule.contains(pkg) && !in.skip.contains(pkg)) {
+                    && !p.newsRule.contains(pkg) && !p.torRule.contains(pkg) && !in.skip.contains(pkg)) {
                 p.release.add(pkg);
             }
         }

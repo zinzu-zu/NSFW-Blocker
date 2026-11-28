@@ -81,6 +81,12 @@ public final class GuardService extends AccessibilityService {
     private volatile long newsUntil;
     /** The news sites, from the managed configuration, while a block runs. */
     private volatile Set<String> newsSites = Collections.emptySet();
+    /** Whether this unlock was already handed to the news block; false again once the screen goes off. */
+    private volatile boolean unlockSeen;
+    /** Last time an accessibility event made us look whether the phone is unlocked (elapsed ms). */
+    private volatile long unlockLookAt;
+    /** Look at most this often, from accessibility events, while the unlock isn't seen yet. */
+    private static final long UNLOCK_LOOK_MS = 1000;
 
     private final Runnable check = new Runnable() {
         @Override public void run() { runCheck(); }
@@ -133,6 +139,7 @@ public final class GuardService extends AccessibilityService {
 
     /** On the background thread: the phone was unlocked. Starts the news block if this is waking up. */
     private void onUnlock() {
+        unlockSeen = true;
         if (NewsBlock.unlocked(this)) {
             AppGate.scan(this, null);
             refreshNews();
@@ -166,6 +173,7 @@ public final class GuardService extends AccessibilityService {
         if (event == null || bg == null) return;
         int type = event.getEventType();
         CharSequence pkg = event.getPackageName();
+        if (!unlockSeen) lookForUnlock();
         if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || type == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             ColorGuard cg = colors;
             if (cg != null) cg.onWindowsChanged();
@@ -184,6 +192,24 @@ public final class GuardService extends AccessibilityService {
     @Override
     public void onInterrupt() {
         // Nothing is spoken or announced, so there's nothing to interrupt.
+    }
+
+    /**
+     * The safety net for the unlock broadcast: something happened on screen and
+     * this unlock hasn't been seen yet, so look whether the phone is unlocked.
+     * At most once a second, on the background thread.
+     */
+    private void lookForUnlock() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - unlockLookAt < UNLOCK_LOOK_MS) return;
+        unlockLookAt = now;
+        Handler h = bg;
+        if (h == null) return;
+        h.post(new Runnable() {
+            @Override public void run() {
+                if (!unlockSeen && unlockedNow()) onUnlock();
+            }
+        });
     }
 
     /**
@@ -394,12 +420,17 @@ public final class GuardService extends AccessibilityService {
         config.addAction(Intent.ACTION_PACKAGES_UNSUSPENDED);
         // The morning news block: when the phone is put down and picked up again.
         IntentFilter screen = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        screen.addAction(Intent.ACTION_SCREEN_ON);
         screen.addAction(Intent.ACTION_USER_PRESENT);
         screen.addAction(Intent.ACTION_SHUTDOWN);
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(packageReceiver, packages, Context.RECEIVER_NOT_EXPORTED);
             registerReceiver(configReceiver, config, Context.RECEIVER_NOT_EXPORTED);
-            registerReceiver(screenReceiver, screen, Context.RECEIVER_NOT_EXPORTED);
+            // Exported on purpose: the unlock broadcast (USER_PRESENT) comes from System
+            // UI, which runs as an ordinary app, so Android doesn't hand it to a
+            // not-exported receiver (0.4.0 to 0.4.4 never saw an unlock because of that).
+            // All four are protected broadcasts, so no other app can send them.
+            registerReceiver(screenReceiver, screen, Context.RECEIVER_EXPORTED);
         } else {
             registerReceiver(packageReceiver, packages);
             registerReceiver(configReceiver, config);
@@ -430,8 +461,12 @@ public final class GuardService extends AccessibilityService {
             h.post(new Runnable() {
                 @Override public void run() {
                     if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+                        unlockSeen = false;
                         NewsBlock.screenOff(GuardService.this);
                     } else if (Intent.ACTION_USER_PRESENT.equals(action)) {
+                        onUnlock();
+                    } else if (Intent.ACTION_SCREEN_ON.equals(action) && unlockedNow()) {
+                        // No lock screen at all (or it was skipped): on is unlocked.
                         onUnlock();
                     }
                 }
